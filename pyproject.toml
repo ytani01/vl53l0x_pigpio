@@ -23,6 +23,7 @@ source = "vcs"
 
 [project.scripts]
 pi0disp = "pi0disp.__main__:cli"
+vl53l0x-cli = "vl53l0x_pigpio.cli:main"
 
 [dependency-groups]
 dev = [

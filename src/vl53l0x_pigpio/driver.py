@@ -4,6 +4,7 @@ Python driver for the VL53L0X distance sensor.
 
 import time
 import pigpio
+import numpy as np
 
 # Registers
 SYSRANGE_START                              = 0x00
@@ -323,6 +324,15 @@ class VL53L0X:
         self.write_byte(SYSTEM_INTERRUPT_CLEAR, 0x01)
 
         return range_mm
+
+    def get_ranges(self, num_samples: int) -> np.ndarray:
+        """
+        指定された回数だけ連続で距離を測定し、結果を numpy 配列で返す。
+        """
+        samples = np.empty(num_samples, dtype=np.uint16)
+        for i in range(num_samples):
+            samples[i] = self.get_range()
+        return samples
 
     def close(self):
         """

@@ -22,8 +22,7 @@ build-backend = "hatchling.build"
 source = "vcs"
 
 [project.scripts]
-pi0disp = "pi0disp.__main__:cli"
-vl53l0x-cli = "vl53l0x_pigpio.cli:main"
+vl53l0x-pigpio = "vl53l0x_pigpio.__main__:main"
 
 [dependency-groups]
 dev = [
@@ -38,3 +37,6 @@ dev = [
 [[tool.mypy.overrides]]
 module = ['pigpio']
 ignore_missing_imports = true
+
+[tool.ruff]
+line-length = 78

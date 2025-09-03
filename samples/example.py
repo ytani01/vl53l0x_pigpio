@@ -4,6 +4,7 @@ import time
 import pigpio
 from vl53l0x_pigpio.driver import VL53L0X
 
+
 def main(count=10):
     pi = pigpio.pi()
     if not pi.connected:
@@ -20,9 +21,10 @@ def main(count=10):
     except Exception as e:
         print(f"Error: {e}")
     finally:
-        if 'tof' in locals() and tof:
+        if "tof" in locals() and tof:
             tof.close()
         pi.stop()
+
 
 if __name__ == "__main__":
     main()

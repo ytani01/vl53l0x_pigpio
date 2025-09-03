@@ -1,10 +1,12 @@
 """
 An example of using the VL53L0X driver with numpy.
 """
+
 import click
 import pigpio
 import numpy as np
 from vl53l0x_pigpio.driver import VL53L0X
+
 
 @click.command()
 @click.argument("samples", type=int, default=100)
@@ -33,6 +35,7 @@ def main(samples):
     finally:
         tof.close()
         pi.stop()
+
 
 if __name__ == "__main__":
     main()

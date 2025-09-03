@@ -1,0 +1,39 @@
+[project]
+name = "vl53l0x_pigpio"
+dynamic = ["version"]
+description = "VL53L0X distance sensor using pigpio"
+readme = "README.md"
+license = { file = "LICENSE" }
+authors = [
+    { name = "Yoichi Tanibayashi", email = "yoichi@tanibayashi.jp" }
+]
+requires-python = ">=3.11"
+dependencies = [
+    "click>=8.2.1",
+    "numpy>=2.3.2",
+    "pigpio>=1.78",
+]
+
+[build-system]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+source = "vcs"
+
+[project.scripts]
+pi0disp = "pi0disp.__main__:cli"
+
+[dependency-groups]
+dev = [
+    "flake8>=7.3.0",
+    "mypy>=1.17.1",
+    "pylint>=3.3.8",
+    "pyright>=1.1.404",
+    "pytest>=8.4.1",
+    "ruff>=0.5.5",
+]
+
+[[tool.mypy.overrides]]
+module = ['pigpio']
+ignore_missing_imports = true

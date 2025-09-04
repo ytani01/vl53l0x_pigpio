@@ -4,7 +4,7 @@ import numpy as np
 import pigpio
 from vl53l0x_pigpio.driver import VL53L0X
 from vl53l0x_pigpio.constants import (
-    VALUE_00, VALUE_01, VALUE_04, VALUE_06, VALUE_07, VALUE_10, VALUE_83, REG_80, REG_81, REG_92, REG_94, REG_FF,
+    VALUE_00, VALUE_01, VALUE_10, VALUE_83, REG_92,
     GLOBAL_CFG_SPAD_ENABLES_REF_0, MSRC_CONFIG_CONTROL, SYSRANGE_START, RESULT_INTERRUPT_STATUS
 )
 

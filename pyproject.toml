@@ -22,7 +22,7 @@ build-backend = "hatchling.build"
 source = "vcs"
 
 [project.scripts]
-vl53l0x-pigpio = "vl53l0x_pigpio.__main__:main"
+vl53l0x_pigpio = "vl53l0x_pigpio.__main__:cli"
 
 [project.optional-dependencies]
 dev = [

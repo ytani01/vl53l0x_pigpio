@@ -1,104 +1,104 @@
+#
+# (c) 2025 Yoichi Tanibayashi
+#
 import time
 
 import click
-from click import Parameter
-import numpy as np
 import pigpio
 
-from typing import Any
+from . import __version__, get_logger, VL53L0X
 
-from importlib.metadata import PackageNotFoundError, version
-
-from vl53l0x_pigpio.driver import VL53L0X
-
-from .my_logger import get_logger
-
-# ロガーのセットアップ
 log = get_logger(__name__)
 
-try:
-    __version__ = version("vl53l0x_pigpio")
-except PackageNotFoundError:
-    __version__ = "unknown"
-
-def print_version_and_exit(ctx: click.Context, param: click.Option | Parameter, value: bool) -> Any:
-    if not value or ctx.resilient_parsing:
-        return
-    click.echo(f"vl53l0x_pigpio, version {__version__}")
-    ctx.exit()
-
-@click.group()
-@click.option('-v', '--version', is_flag=True, is_eager=True, expose_value=False, callback=print_version_and_exit, help='バージョンを表示して終了します。')
-@click.option('-d', '--debug', is_flag=True, help='デバッグモードを有効にします。')
+@click.group(
+    invoke_without_command=True,
+    help="""
+VL53L0X driver CLI
+"""
+)
+@click.option("--debug", "-d", is_flag=True, help="debug flag")
+@click.version_option(
+    __version__, "--version", "-v", "-V", message='%(version)s'
+)
+@click.help_option("--help", "-h")
 @click.pass_context
-def main(ctx: click.Context, debug: bool):
+def cli(ctx: click.Context, debug: bool):
     """VL53L0X距離センサーのPythonドライバー用CLIツール。"""
-    ctx.ensure_object(dict)
-    ctx.obj["DEBUG"] = debug
-    if debug:
-        log.setLevel("DEBUG")
-    else:
-        log.setLevel("INFO")
+    cmd_name = ctx.info_name
+    subcmd_name = ctx.invoked_subcommand
 
-@main.command()
-@click.option("--count", default=10, help="取得する距離データの数。")
+    __log = get_logger(str(cmd_name), debug)
+
+    __log.debug("cmd_name=%a, subcmd_name=%a", cmd_name, subcmd_name)
+    
+    if subcmd_name is None:
+        print(f"{ctx.get_help()}")
+
+
+@cli.command(
+    help="""
+get distance"""
+)
+@click.option(
+    "--count", "-c", type=int, default=10, show_default=True, help="count"
+)
+@click.option(
+    "--interval", "-i", type=float, default=1.0, show_default=True,
+    help="interval seconds"
+)
+@click.option("--debug", "-d", is_flag=True, default=False, help="debug flag")
+@click.version_option(
+    __version__, "--version", "-v", "-V", message='%(version)s'
+)
+@click.help_option("--help", "-h")
 @click.pass_context
-def example(ctx: click.Context, count: int):
+def get(ctx, count, interval, debug):
     """基本的な例を実行します。"""
-    debug: bool = ctx.obj["DEBUG"]
+    __log = get_logger(__name__, debug)
+    __log.debug("count=%s, interval=%s", count, interval)
+
+    cmd_name = ctx.command.name
+    __log.debug("cmd_name=%a", cmd_name)
+    
     pi = pigpio.pi()
     if not pi.connected:
-        raise click.ClickException(
-            "pigpioデーモンに接続できませんでした。実行中であることを確認してください。"
-        )
+        raise click.ClickException("cannnto connect pigpiod")
+
     try:
         with VL53L0X(pi, debug=debug) as sensor:
-            click.echo(f"{count}回の距離測定を開始します...")
             for i in range(count):
                 distance: int = sensor.get_range()
                 if distance > 0:
-                    click.echo(f"測定 {i + 1}: {distance} mm")
+                    click.echo(f"{i + 1}/{count}: {distance} mm")
                 else:
-                    click.echo(f"測定 {i + 1}: 無効なデータ。")
-                time.sleep(0.1)
+                    click.echo(f"{i + 1}/{count}: 無効なデータ。")
+                time.sleep(interval)
     finally:
         pi.stop()
 
-@main.command()
-@click.argument("samples", type=int, default=100)
-@click.pass_context
-def numpy_example(ctx: click.Context, samples: int):
-    """複数の距離データを取得し、統計情報を表示します。"""
-    debug: bool = ctx.obj["DEBUG"]
-    pi = pigpio.pi()
-    if not pi.connected:
-        raise click.ClickException(
-            "pigpioデーモンに接続できませんでした。実行中であることを確認してください。"
-        )
-    try:
-        with VL53L0X(pi, debug=debug) as sensor:
-            click.echo(f"{samples}個のサンプルを取得しています...")
-            ranges: np.ndarray = sensor.get_ranges(samples)
-            click.echo("---")
-            click.echo(f"平均:   {np.mean(ranges):.2f} mm")
-            click.echo(f"標準偏差: {np.std(ranges):.2f} mm")
-            click.echo(f"最小値:    {np.min(ranges)} mm")
-            click.echo(f"最大値:    {np.max(ranges)} mm")
-            click.echo("---")
-    finally:
-        pi.stop()
 
-@main.command()
-@click.option("--count", default=100, help="測定する回数。")
+@cli.command()
+@click.option(
+    "--count", type=int, default=100, show_default=True, help="count"
+)
+@click.option("--debug", "-d", is_flag=True, default=False, help="debug flag")
+@click.version_option(
+    __version__, "--version", "-v", "-V", message='%(version)s'
+)
+@click.help_option("--help", "-h")
 @click.pass_context
-def performance(ctx: click.Context, count: int):
+def performance(ctx, count, debug):
     """VL53L0Xセンサーの測定パフォーマンスを評価します。"""
-    debug: bool = ctx.obj["DEBUG"]
+    __log = get_logger(__name__, debug)
+    __log.debug("count=%s", count)
+
+    cmd_name = ctx.command.name
+    __log.debug("cmd_name=%a", cmd_name)
+    
     pi = pigpio.pi()
     if not pi.connected:
-        raise click.ClickException(
-            "pigpioデーモンに接続できませんでした。実行中であることを確認してください。"
-        )
+        raise click.ClickException("cannnto connect pigpiod")
+
     try:
         with VL53L0X(pi, debug=debug) as sensor:
             click.echo(f"{count}回の距離測定パフォーマンスを評価します...")

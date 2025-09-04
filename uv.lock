@@ -395,7 +395,7 @@ dependencies = [
     { name = "pigpio" },
 ]
 
-[package.dev-dependencies]
+[package.optional-dependencies]
 dev = [
     { name = "flake8" },
     { name = "mypy" },
@@ -408,16 +408,13 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "click", specifier = ">=8.2.1" },
+    { name = "flake8", marker = "extra == 'dev'", specifier = ">=7.3.0" },
+    { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.17.1" },
     { name = "numpy", specifier = ">=2.3.2" },
     { name = "pigpio", specifier = ">=1.78" },
+    { name = "pylint", marker = "extra == 'dev'", specifier = ">=3.3.8" },
+    { name = "pyright", marker = "extra == 'dev'", specifier = ">=1.1.404" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.4.1" },
+    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.5.5" },
 ]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "flake8", specifier = ">=7.3.0" },
-    { name = "mypy", specifier = ">=1.17.1" },
-    { name = "pylint", specifier = ">=3.3.8" },
-    { name = "pyright", specifier = ">=1.1.404" },
-    { name = "pytest", specifier = ">=8.4.1" },
-    { name = "ruff", specifier = ">=0.5.5" },
-]
+provides-extras = ["dev"]

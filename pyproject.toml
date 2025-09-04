@@ -24,7 +24,7 @@ source = "vcs"
 [project.scripts]
 vl53l0x-pigpio = "vl53l0x_pigpio.__main__:main"
 
-[dependency-groups]
+[project.optional-dependencies]
 dev = [
     "flake8>=7.3.0",
     "mypy>=1.17.1",

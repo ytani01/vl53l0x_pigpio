@@ -87,3 +87,34 @@ def numpy_example(ctx: click.Context, samples: int):
             click.echo("---")
     finally:
         pi.stop()
+
+@main.command()
+@click.option("--count", default=100, help="測定する回数。")
+@click.pass_context
+def performance(ctx: click.Context, count: int):
+    """VL53L0Xセンサーの測定パフォーマンスを評価します。"""
+    debug: bool = ctx.obj["DEBUG"]
+    pi = pigpio.pi()
+    if not pi.connected:
+        raise click.ClickException(
+            "pigpioデーモンに接続できませんでした。実行中であることを確認してください。"
+        )
+    try:
+        with VL53L0X(pi, debug=debug) as sensor:
+            click.echo(f"{count}回の距離測定パフォーマンスを評価します...")
+            start_time = time.perf_counter()
+            for _ in range(count):
+                sensor.get_range()
+            end_time = time.perf_counter()
+
+            total_time = end_time - start_time
+            avg_time_per_measurement = total_time / count
+            measurements_per_second = count / total_time
+
+            click.echo("---")
+            click.echo(f"合計時間: {total_time:.4f} 秒")
+            click.echo(f"1回あたりの平均時間: {avg_time_per_measurement * 1000:.4f} ms")
+            click.echo(f"1秒あたりの測定回数: {measurements_per_second:.2f} 回/秒")
+            click.echo("---")
+    finally:
+        pi.stop()

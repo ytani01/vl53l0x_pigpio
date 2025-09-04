@@ -1,9 +1,10 @@
-"Python driver for the VL53L0X distance sensor."
+"""Python driver for the VL53L0X distance sensor."""
 
 import time
 import pigpio
 import numpy as np
 
+from vl53l0x_pigpio.my_logger import get_logger
 from vl53l0x_pigpio.constants import (
     SYSRANGE_START,
     SYSTEM_SEQUENCE_CONFIG,
@@ -126,14 +127,21 @@ class VL53L0X:
     VL53L0X driver.
     """
 
-    def __init__(self, pi: pigpio.pi, i2c_bus=1, i2c_address=0x29):
+    def __init__(self, pi: pigpio.pi, i2c_bus=1, i2c_address=0x29, debug=False):
         """
         Initialize the VL53L0X sensor.
         """
         self.pi = pi
         self.i2c_bus = i2c_bus
         self.i2c_address = i2c_address
+        self.log = get_logger(__name__, debug)
+        self.log.debug(
+            "Open VL53L0X at i2c_bus=%s, i2c_address=%s",
+            self.i2c_bus,
+            hex(self.i2c_address),
+        )
         self.handle = self.pi.i2c_open(self.i2c_bus, self.i2c_address)
+        self.log.debug("handle=%s", self.handle)
         self.initialize()
 
     def _set_i2c_registers_initial_values(self):
@@ -325,12 +333,21 @@ class VL53L0X:
 
     def initialize(self):
         """
-        Initialize the sensor.
+        センサーを初期化します。
         """
+        # I2Cレジスタの初期値を設定
         self._set_i2c_registers_initial_values()
+
+        # 信号レート制限を設定
         self._configure_signal_rate_limit()
+
+        # SPAD情報を設定
         self._setup_spad_info()
+
+        # 割り込みGPIOを設定
         self._configure_interrupt_gpio()
+
+        # タイミングバジェットを設定し、キャリブレーションを実行
         self._set_timing_budget_and_calibrations()
 
     def _get_spad_info(self):
@@ -452,12 +469,15 @@ class VL53L0X:
         """
         Read a byte from a register.
         """
-        return self.pi.i2c_read_byte_data(self.handle, register)
+        value = self.pi.i2c_read_byte_data(self.handle, register)
+        self.log.debug("Read byte from reg %s: %s", hex(register), hex(value))
+        return value
 
     def write_byte(self, register, value):
         """
         Write a byte to a register.
         """
+        self.log.debug("Write byte to reg %s: %s", hex(register), hex(value))
         self.pi.i2c_write_byte_data(self.handle, register, value)
 
     def read_word(self, register):
@@ -466,7 +486,9 @@ class VL53L0X:
         """
         val = self.pi.i2c_read_word_data(self.handle, register)
         # pigpio reads as little-endian, VL53L0X is big-endian
-        return ((val & 0xFF) << 8) | (val >> 8)
+        value = ((val & 0xFF) << 8) | (val >> 8)
+        self.log.debug("Read word from reg %s: %s", hex(register), hex(value))
+        return value
 
     def write_word(self, register, value):
         """

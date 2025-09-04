@@ -482,26 +482,128 @@ class VL53L0X:
 
         return count, is_aperture
 
+    # 内部ヘルパー関数 (C++版 calcMacroPeriod の移植)
+    def _calc_macro_period(self, vcsel_period_pclks: int) -> int:
+        return ((2304 * vcsel_period_pclks * 1655) + 500) // 1000  # [ns]
+
+    def _timeout_mclks_to_microseconds(self, timeout_mclks: int, vcsel_period_pclks: int) -> int:
+        macro_period_ns = self._calc_macro_period(vcsel_period_pclks)
+        return ((timeout_mclks * macro_period_ns) + 500) // 1000
+
+    def _decode_timeout(self, reg_val: int) -> int:
+        # C++: VL53L0X_decode_timeout()
+        ls_byte = reg_val & 0xFF
+        ms_byte = (reg_val >> 8) & 0xFF
+        return ((ls_byte << ms_byte) + 1)
+
+    def _encode_timeout(self, timeout_mclks: int) -> int:
+        # C++: VL53L0X_encode_timeout()
+        ls_byte = 0
+        ms_byte = 0
+        if timeout_mclks > 0:
+            timeout_mclks -= 1
+            while (timeout_mclks & 0xFFFFFF00) > 0:
+                timeout_mclks >>= 1
+                ms_byte += 1
+            ls_byte = timeout_mclks & 0xFF
+            return (ms_byte << 8) | ls_byte
+        return 0
+
     def get_measurement_timing_budget(self) -> int:
         """
-        現在の測定タイミングバジェットをマイクロ秒単位で取得します。
-        (実際のレジスタ実装はより複雑です。これはプレースホルダーです。)
+        現在の測定タイミングバジェットをマイクロ秒単位で返す
         """
-        # 実際のVL53L0Xドライバでは、複数のレジスタを読み取り、
-        # 有効なタイミングバジェットを計算する必要があります。
-        # ここではプレースホルダーとして固定値を返します。
-        return 500000  # 500ms (例)
+        budget_us = 1910  # Start overhead
+        enables = self.read_byte(SYSTEM_SEQUENCE_CONFIG)
 
-    def set_measurement_timing_budget(self, budget_us: int) -> None:
+        # pre-range
+        if (enables >> 6) & 0x01:
+            pre_range_vcsel_period_pclks = self.read_byte(PRE_RANGE_CONFIG_VCSEL_PERIOD)
+            pre_range_mclks = self._decode_timeout(
+                self.read_word(PRE_RANGE_CONFIG_TIMEOUT_MACROP_HI)
+            )
+            pre_range_us = self._timeout_mclks_to_microseconds(
+                pre_range_mclks, pre_range_vcsel_period_pclks
+            )
+            budget_us += pre_range_us + 660  # overhead
+
+        # final-range
+        if (enables >> 7) & 0x01:
+            final_range_vcsel_period_pclks = self.read_byte(FINAL_RANGE_CONFIG_VCSEL_PERIOD)
+            final_range_mclks = self._decode_timeout(
+                self.read_word(FINAL_RANGE_CONFIG_TIMEOUT_MACROP_HI)
+            )
+
+            if (enables >> 6) & 0x01:  # if pre-range enabled, subtract it
+                final_range_mclks -= pre_range_mclks
+
+            final_range_us = self._timeout_mclks_to_microseconds(
+                final_range_mclks, final_range_vcsel_period_pclks
+            )
+            budget_us += final_range_us + 550  # overhead
+
+        return budget_us
+
+    def set_measurement_timing_budget(self, budget_us: int) -> bool:
         """
-        測定タイミングバジェットをマイクロ秒単位で設定します。
-        (実際のレジスタ実装はより複雑です。これはプレースホルダーです。)
+        測定タイミングバジェットを設定する
         """
-        # 実際のVL53L0Xドライバでは、目的のタイミングバジェットに合わせて
-        # センサーを構成するために、一連のレジスタ書き込みが必要になります。
-        # (例: プリレンジ、ファイナルレンジ、様々なタイミングパラメータ)
-        # 現時点では、このメソッドは何もしません。
-        pass
+        used_budget_us = 1320  # Start overhead
+        enables = self.read_byte(SYSTEM_SEQUENCE_CONFIG)
+
+        pre_range_us = 0
+        pre_range_mclks = 0
+        if (enables >> 6) & 0x01:
+            pre_range_vcsel_period_pclks = self.read_byte(PRE_RANGE_CONFIG_VCSEL_PERIOD)
+            pre_range_mclks = self._decode_timeout(
+                self.read_word(PRE_RANGE_CONFIG_TIMEOUT_MACROP_HI)
+            )
+            pre_range_us = self._timeout_mclks_to_microseconds(
+                pre_range_mclks, pre_range_vcsel_period_pclks
+            )
+            used_budget_us += pre_range_us + 660
+
+        if (enables >> 7) & 0x01:
+            final_range_us = budget_us - used_budget_us - 550
+            if final_range_us <= 0:
+                raise ValueError("Requested timing budget too small")
+
+            final_range_vcsel_period_pclks = self.read_byte(FINAL_RANGE_CONFIG_VCSEL_PERIOD)
+            final_range_mclks = self._timeout_mclks_to_microseconds(
+                final_range_us, final_range_vcsel_period_pclks
+            )
+
+            if (enables >> 6) & 0x01:
+                final_range_mclks += pre_range_mclks
+
+            self.write_word(
+                FINAL_RANGE_CONFIG_TIMEOUT_MACROP_HI,
+                self._encode_timeout(final_range_mclks),
+            )
+            return True
+        return False
+
+
+    # def get_measurement_timing_budget(self) -> int:
+    #     """
+    #     現在の測定タイミングバジェットをマイクロ秒単位で取得します。
+    #     (実際のレジスタ実装はより複雑です。これはプレースホルダーです。)
+    #     """
+    #     # 実際のVL53L0Xドライバでは、複数のレジスタを読み取り、
+    #     # 有効なタイミングバジェットを計算する必要があります。
+    #     # ここではプレースホルダーとして固定値を返します。
+    #     return 500000  # 500ms (例)
+
+    # def set_measurement_timing_budget(self, budget_us: int) -> None:
+    #     """
+    #     測定タイミングバジェットをマイクロ秒単位で設定します。
+    #     (実際のレジスタ実装はより複雑です。これはプレースホルダーです。)
+    #     """
+    #     # 実際のVL53L0Xドライバでは、目的のタイミングバジェットに合わせて
+    #     # センサーを構成するために、一連のレジスタ書き込みが必要になります。
+    #     # (例: プリレンジ、ファイナルレンジ、様々なタイミングパラメータ)
+    #     # 現時点では、このメソッドは何もしません。
+    #     pass
 
     def perform_single_ref_calibration(self, vhv_init_byte: int) -> None:
         """

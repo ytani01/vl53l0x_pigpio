@@ -8,9 +8,6 @@ import pigpio
 
 from . import __version__, get_logger, VL53L0X
 
-log = get_logger(__name__)
-
-_name = __name__
 
 @click.group(
     invoke_without_command=True,

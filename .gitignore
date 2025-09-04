@@ -5,6 +5,7 @@ screenshot_*
 *.swp
 *.bak
 *.log
+.*_cache/
 
 # emacs
 *~

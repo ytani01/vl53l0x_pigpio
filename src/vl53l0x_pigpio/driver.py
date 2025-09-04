@@ -609,7 +609,9 @@ class VL53L0X:
         _, data = self.pi.i2c_read_i2c_block_data(
             self.handle, register, count
         )
-        return data
+        if isinstance(data, bytearray):
+            return list(data)
+        return []
 
     def write_block(self, register: int, data: list[int]) -> None:
         """

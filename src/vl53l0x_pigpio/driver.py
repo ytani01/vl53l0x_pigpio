@@ -1,34 +1,130 @@
 """Python driver for the VL53L0X distance sensor."""
 
 import time
-
-import numpy as np
 import pigpio
+import numpy as np
 
 from vl53l0x_pigpio.my_logger import get_logger
 from vl53l0x_pigpio.constants import (
-    SYSRANGE_START, SYSTEM_SEQUENCE_CONFIG,
-    SYSTEM_INTERRUPT_CONFIG_GPIO, GPIO_HV_MUX_ACTIVE_HIGH,
-    SYSTEM_INTERRUPT_CLEAR, RESULT_INTERRUPT_STATUS,
-    RESULT_RANGE_STATUS, MSRC_CONFIG_CONTROL,
+    SYSRANGE_START,
+    SYSTEM_SEQUENCE_CONFIG,
+    SYSTEM_INTERRUPT_CONFIG_GPIO,
+    GPIO_HV_MUX_ACTIVE_HIGH,
+    SYSTEM_INTERRUPT_CLEAR,
+    RESULT_INTERRUPT_STATUS,
+    RESULT_RANGE_STATUS,
+    MSRC_CONFIG_CONTROL,
     FINAL_RANGE_CFG_MIN_COUNT_RATE_RTN_LIMIT,
-    GLOBAL_CFG_SPAD_ENABLES_REF_0, GLOBAL_CFG_REF_EN_START_SELECT,
-    DYN_SPAD_NUM_REQUESTED_REF_SPAD, DYN_SPAD_REF_EN_START_OFFSET,
-    VALUE_00, VALUE_01, VALUE_02, VALUE_03, VALUE_04, VALUE_05, VALUE_06,
-    VALUE_07, VALUE_08, VALUE_09, VALUE_0A, VALUE_10, VALUE_12, VALUE_14,
-    VALUE_1A, VALUE_20, VALUE_21, VALUE_25, VALUE_26, VALUE_28, VALUE_30,
-    VALUE_32, VALUE_34, VALUE_40, VALUE_44, VALUE_6B, VALUE_83, VALUE_96,
-    VALUE_A0, VALUE_B4, VALUE_E8, VALUE_FE, VALUE_FF, VALUE_F8,
-    REG_00, REG_01, REG_0D, REG_0E, REG_09, REG_10, REG_11, REG_20,
-    REG_22, REG_23, REG_24, REG_25, REG_27, REG_30, REG_31, REG_32,
-    REG_34, REG_35, REG_40, REG_42, REG_43, REG_44, REG_45, REG_46,
-    REG_47, REG_48, REG_49, REG_4A, REG_4B, REG_4C, REG_4D, REG_4E,
-    REG_50, REG_51, REG_52, REG_54, REG_56, REG_57, REG_60, REG_61,
-    REG_62, REG_64, REG_65, REG_66, REG_67, REG_70, REG_71, REG_72,
-    REG_75, REG_76, REG_77, REG_78, REG_7A, REG_7B, REG_80, REG_81,
-    REG_8E, REG_91, REG_92, REG_94, REG_FF, I2C_STANDARD_MODE,
-    SPAD_NUM_REQUESTED_REF, GPIO_INTERRUPT_CONFIG, CALIBRATION_VALUE_40,
+    GLOBAL_CFG_SPAD_ENABLES_REF_0,
+    GLOBAL_CFG_REF_EN_START_SELECT,
+    DYN_SPAD_NUM_REQUESTED_REF_SPAD,
+    DYN_SPAD_REF_EN_START_OFFSET,
+    VALUE_00,
+    VALUE_01,
+    VALUE_02,
+    VALUE_03,
+    VALUE_04,
+    VALUE_05,
+    VALUE_06,
+    VALUE_07,
+    VALUE_08,
+    VALUE_09,
+    VALUE_0A,
+    VALUE_10,
+    VALUE_12,
+    VALUE_14,
+    VALUE_1A,
+    VALUE_20,
+    VALUE_21,
+    VALUE_25,
+    VALUE_26,
+    VALUE_28,
+    VALUE_30,
+    VALUE_32,
+    VALUE_34,
+    VALUE_40,
+    VALUE_44,
+    VALUE_6B,
+    VALUE_83,
+    VALUE_96,
+    VALUE_A0,
+    VALUE_B4,
+    VALUE_E8,
+    VALUE_FE,
+    VALUE_FF,
+    VALUE_F8,
+    REG_00,
+    REG_01,
+    REG_0D,
+    REG_0E,
+    REG_09,
+    REG_10,
+    REG_11,
+    REG_20,
+    REG_22,
+    REG_23,
+    REG_24,
+    REG_25,
+    REG_27,
+    REG_30,
+    REG_31,
+    REG_32,
+    REG_34,
+    REG_35,
+    REG_40,
+    REG_42,
+    REG_43,
+    REG_44,
+    REG_45,
+    REG_46,
+    REG_47,
+    REG_48,
+    REG_49,
+    REG_4A,
+    REG_4B,
+    REG_4C,
+    REG_4D,
+    REG_4E,
+    REG_50,
+    REG_51,
+    REG_52,
+    REG_54,
+    REG_56,
+    REG_57,
+    REG_60,
+    REG_61,
+    REG_62,
+    REG_64,
+    REG_65,
+    REG_66,
+    REG_67,
+    REG_70,
+    REG_71,
+    REG_72,
+    REG_75,
+    REG_76,
+    REG_77,
+    REG_78,
+    REG_7A,
+    REG_7B,
+    REG_80,
+    REG_81,
+    REG_8E,
+    REG_91,
+    REG_92,
+    REG_94,
+    REG_FF,
+    I2C_STANDARD_MODE,
+    SPAD_NUM_REQUESTED_REF,
+    GPIO_INTERRUPT_CONFIG,
+    CALIBRATION_VALUE_40,
     TIMEOUT_LIMIT,
+    SPAD_COUNT_MASK,
+    SPAD_APERTURE_BIT,
+    INTERRUPT_STATUS_MASK,
+    SPAD_START_INDEX_APERTURE,
+    SPAD_TOTAL_COUNT,
+    SPAD_MAP_BITS_PER_BYTE,
 )
 
 
@@ -37,13 +133,7 @@ class VL53L0X:
     VL53L0X driver.
     """
 
-    def __init__(
-        self,
-        pi: pigpio.pi,
-        i2c_bus: int = 1,
-        i2c_address: int = 0x29,
-        debug: bool = False,
-    ):
+    def __init__(self, pi: pigpio.pi, i2c_bus: int = 1, i2c_address: int = 0x29, debug: bool = False):
         """
         Initialize the VL53L0X sensor.
         """
@@ -75,37 +165,40 @@ class VL53L0X:
         """
         self.close()
 
-    def _set_i2c_registers_initial_values(self):
+    def _set_i2c_registers_initial_values(self) -> None:
         """
         I2Cレジスタの初期値を設定します。
         """
+        # I2C標準モードを設定
         self.write_byte(I2C_STANDARD_MODE, VALUE_00)
+
+        # VL53L0Xデータシートに従って各種レジスタを初期化
         self.write_byte(REG_80, VALUE_01)
         self.write_byte(REG_FF, VALUE_01)
         self.write_byte(REG_00, VALUE_00)
+
+        # REG_91からストップ変数を読み取る
         self.stop_variable = self.read_byte(REG_91)
+
+        # レジスタをデフォルトの電源投入時の値に復元
         self.write_byte(REG_00, VALUE_01)
         self.write_byte(REG_FF, VALUE_00)
         self.write_byte(REG_80, VALUE_00)
 
-    def _configure_signal_rate_limit(self):
+    def _configure_signal_rate_limit(self) -> None:
         """
         信号レート制限を設定します。
         """
-        # disable SIGNAL_RATE_MSRC (bit 1) and SIGNAL_RATE_PRE_RANGE (bit 4)
-        # limit checks
-        self.write_byte(
-            MSRC_CONFIG_CONTROL,
-            (self.read_byte(MSRC_CONFIG_CONTROL) | VALUE_12),
-        )
+        # MSRC_CONFIG_CONTROLレジスタのSIGNAL_RATE_MSRC (ビット1) と
+        # SIGNAL_RATE_PRE_RANGE (ビット4) の制限チェックを無効にする。
+        current_msrc_config = self.read_byte(MSRC_CONFIG_CONTROL)
+        self.write_byte(MSRC_CONFIG_CONTROL, (current_msrc_config | VALUE_12))
 
-        # set final range signal rate limit to 0.25 MCPS
-        # (million counts per second)
-        self.write_word(
-            FINAL_RANGE_CFG_MIN_COUNT_RATE_RTN_LIMIT,
-            VALUE_32,  # 0.25 * 128 = 32
-        )
+        # 最終レンジ信号レート制限を0.25 MCPS (百万カウント/秒) に設定する。
+        # この値は0.25 * 128 = 32。
+        self.write_word(FINAL_RANGE_CFG_MIN_COUNT_RATE_RTN_LIMIT, VALUE_32)
 
+        # SYSTEM_SEQUENCE_CONFIGを設定して、構成のためにすべてのシーケンスを有効にする。
         self.write_byte(SYSTEM_SEQUENCE_CONFIG, VALUE_FF)
 
     def _setup_spad_info(self):
@@ -114,10 +207,13 @@ class VL53L0X:
         """
         spad_count, spad_is_aperture = self._get_spad_info()
 
-        # SPADマップはAPIで読み取られますが、同じデータがレジスタに書き込まれるため、
-        # そこから読み取ります。
+        # The SPAD map (RefGoodSpadMap) is read by VL53L0X_get_info_from_device()
+        # in the API, but the same data seems to be written to
+        # GLOBAL_CONFIG_SPAD_ENABLES_REF_0 through GLOBAL_CONFIG_SPAD_ENABLES_REF_5,
+        # so read it from there.
         ref_spad_map = self.read_block(GLOBAL_CFG_SPAD_ENABLES_REF_0, 6)
 
+        # Configure dynamic SPAD settings
         self.write_byte(REG_FF, VALUE_01)
         self.write_byte(DYN_SPAD_REF_EN_START_OFFSET, VALUE_00)
         self.write_byte(
@@ -126,19 +222,21 @@ class VL53L0X:
         self.write_byte(REG_FF, VALUE_00)
         self.write_byte(GLOBAL_CFG_REF_EN_START_SELECT, VALUE_B4)
 
-        first_spad_to_enable = 12 if spad_is_aperture else 0
+        first_spad_to_enable = SPAD_START_INDEX_APERTURE if spad_is_aperture else 0
         spads_enabled = 0
 
-        for i in range(48):
+        # Enable SPADs based on count and aperture information
+        for i in range(SPAD_TOTAL_COUNT):
             if i < first_spad_to_enable or spads_enabled == spad_count:
-                # 有効化する最初のビットより小さいか、
-                # すでに必要なSPAD数が有効化されている場合、このビットをゼロにする
-                ref_spad_map[i // 8] &= ~(1 << (i % 8))
-            elif (ref_spad_map[i // 8] >> (i % 8)) & 0x1:
+                # This bit is lower than the first one to enable, or
+                # (spad_count) bits have already been enabled, so zero this bit
+                ref_spad_map[i // SPAD_MAP_BITS_PER_BYTE] &= ~(1 << (i % SPAD_MAP_BITS_PER_BYTE))
+            elif (ref_spad_map[i // SPAD_MAP_BITS_PER_BYTE] >> (i % SPAD_MAP_BITS_PER_BYTE)) & 0x1:
                 spads_enabled += 1
 
         self.write_block(GLOBAL_CFG_SPAD_ENABLES_REF_0, ref_spad_map)
 
+        # Further SPAD configuration registers
         self.write_byte(REG_FF, VALUE_01)
         self.write_byte(REG_00, VALUE_00)
 
@@ -233,41 +331,43 @@ class VL53L0X:
         self.write_byte(REG_FF, VALUE_00)
         self.write_byte(REG_80, VALUE_00)
 
-    def _configure_interrupt_gpio(self):
+    def _configure_interrupt_gpio(self) -> None:
         """
         割り込みGPIOを設定します。
         """
+        # 割り込み出力のためにGPIOを設定
         self.write_byte(SYSTEM_INTERRUPT_CONFIG_GPIO, GPIO_INTERRUPT_CONFIG)
-        # active low
-        self.write_byte(
-            GPIO_HV_MUX_ACTIVE_HIGH,
-            (self.read_byte(GPIO_HV_MUX_ACTIVE_HIGH) & ~VALUE_10),
-        )
+
+        # GPIO_HV_MUX_ACTIVE_HIGHレジスタをアクティブローに設定
+        current_gpio_hv_mux = self.read_byte(GPIO_HV_MUX_ACTIVE_HIGH)
+        self.write_byte(GPIO_HV_MUX_ACTIVE_HIGH, (current_gpio_hv_mux & ~VALUE_10))
+
+        # 割り込みをクリア
         self.write_byte(SYSTEM_INTERRUPT_CLEAR, VALUE_01)
 
-    def _set_timing_budget_and_calibrations(self):
+    def _set_timing_budget_and_calibrations(self) -> None:
         """
         タイミングバジェットを設定し、キャリブレーションを実行します。
         """
-        self.measurement_timing_budget_us = (
-            self.get_measurement_timing_budget()
-        )
+        # 測定タイミングバジェットを取得して設定
+        self.measurement_timing_budget_us = self.get_measurement_timing_budget()
         self.set_measurement_timing_budget(self.measurement_timing_budget_us)
 
-        # 以前のシーケンス設定を復元
+        # 以前のシーケンス設定を復元し、再度タイミングバジェットを設定
         self.write_byte(SYSTEM_SEQUENCE_CONFIG, VALUE_E8)
         self.set_measurement_timing_budget(self.measurement_timing_budget_us)
 
+        # 単一のリファレンスキャリブレーションを実行
         self.write_byte(SYSTEM_SEQUENCE_CONFIG, VALUE_01)
         self.perform_single_ref_calibration(CALIBRATION_VALUE_40)
 
         self.write_byte(SYSTEM_SEQUENCE_CONFIG, VALUE_02)
         self.perform_single_ref_calibration(VALUE_00)
 
-        # "restore the previous Sequence Config"
+        # キャリブレーション後に以前のシーケンス設定を復元
         self.write_byte(SYSTEM_SEQUENCE_CONFIG, VALUE_E8)
 
-    def initialize(self):
+    def initialize(self) -> None:
         """
         センサーを初期化します。
         """
@@ -287,6 +387,10 @@ class VL53L0X:
         self._set_timing_budget_and_calibrations()
 
     def _get_spad_info(self) -> tuple[int, bool]:
+        """
+        SPAD情報を取得します。
+        """
+        # SPAD情報取得のための初期レジスタ設定
         self.write_byte(REG_80, VALUE_01)
         self.write_byte(REG_FF, VALUE_01)
         self.write_byte(REG_00, VALUE_00)
@@ -298,6 +402,7 @@ class VL53L0X:
 
         self.write_byte(REG_80, VALUE_01)
 
+        # SPADキャリブレーションをトリガーし、完了を待つ
         self.write_byte(REG_94, VALUE_6B)
         self.write_byte(VALUE_83, VALUE_00)
         start = time.time()
@@ -305,11 +410,13 @@ class VL53L0X:
             if time.time() - start > TIMEOUT_LIMIT:
                 raise Exception("Timeout")
         self.write_byte(VALUE_83, VALUE_01)
+
+        # SPADカウントとアパーチャ情報を読み取る
         tmp = self.read_byte(REG_92)
+        count = tmp & SPAD_COUNT_MASK
+        is_aperture = ((tmp & SPAD_APERTURE_BIT) != 0)
 
-        count = tmp & 0x7F
-        is_aperture = ((tmp >> 7) & VALUE_01) == 1
-
+        # レジスタをデフォルト値に復元
         self.write_byte(REG_81, VALUE_00)
         self.write_byte(REG_FF, VALUE_06)
         self.write_byte(VALUE_83, (self.read_byte(VALUE_83) & ~VALUE_04))
@@ -329,10 +436,9 @@ class VL53L0X:
         # 実際のVL53L0Xドライバでは、複数のレジスタを読み取り、
         # 有効なタイミングバジェットを計算する必要があります。
         # ここではプレースホルダーとして固定値を返します。
-        # TODO: Implement actual timing budget calculation
         return 500000  # 500ms (例)
 
-    def set_measurement_timing_budget(self, budget_us: int):
+    def set_measurement_timing_budget(self, budget_us: int) -> None:
         """
         測定タイミングバジェットをマイクロ秒単位で設定します。
         (実際のレジスタ実装はより複雑です。これはプレースホルダーです。)
@@ -341,21 +447,28 @@ class VL53L0X:
         # センサーを構成するために、一連のレジスタ書き込みが必要になります。
         # (例: プリレンジ、ファイナルレンジ、様々なタイミングパラメータ)
         # 現時点では、このメソッドは何もしません。
-        # TODO: Implement actual timing budget setting
         pass
 
-    def perform_single_ref_calibration(self, vhv_init_byte: int):
+    def perform_single_ref_calibration(self, vhv_init_byte: int) -> None:
+        """
+        単一のリファレンスキャリブレーションを実行します。
+        """
+        # 指定されたVHV初期バイトで測距を開始
         self.write_byte(SYSRANGE_START, VALUE_01 | vhv_init_byte)
+
+        # 完了を示す割り込みステータスの変化を待つ
         start = time.time()
-        while (self.read_byte(RESULT_INTERRUPT_STATUS) & 0x07) == VALUE_00:
+        while (self.read_byte(RESULT_INTERRUPT_STATUS) & INTERRUPT_STATUS_MASK) == VALUE_00:
             if time.time() - start > TIMEOUT_LIMIT:
                 raise Exception("Timeout")
+
+        # 割り込みをクリアし、測距を停止
         self.write_byte(SYSTEM_INTERRUPT_CLEAR, VALUE_01)
         self.write_byte(SYSRANGE_START, VALUE_00)
 
     def get_range(self) -> int:
         """
-        Perform a single ranging measurement and return the result in mm.
+        単一の測距測定を実行し、結果をmm単位で返します。
         """
         self.write_byte(REG_80, VALUE_01)
         self.write_byte(REG_FF, VALUE_01)
@@ -373,7 +486,7 @@ class VL53L0X:
                 raise Exception("Timeout")
 
         start = time.time()
-        while (self.read_byte(RESULT_INTERRUPT_STATUS) & 0x07) == VALUE_00:
+        while (self.read_byte(RESULT_INTERRUPT_STATUS) & INTERRUPT_STATUS_MASK) == VALUE_00:
             if time.time() - start > TIMEOUT_LIMIT:
                 raise Exception("Timeout")
 
@@ -396,9 +509,9 @@ class VL53L0X:
             samples[i] = self.get_range()
         return samples
 
-    def close(self):
+    def close(self) -> None:
         """
-        Close the I2C connection.
+        I2C接続を閉じます。
         """
         self.pi.i2c_close(self.handle)
 
@@ -407,14 +520,14 @@ class VL53L0X:
         レジスタから1バイト読み取ります。
         """
         value = self.pi.i2c_read_byte_data(self.handle, register)
-        self.log.debug("Read byte: reg=%s, val=%s", hex(register), hex(value))
+        self.log.debug("レジスタ %s からバイトを読み取り: %s", hex(register), hex(value))
         return value
 
-    def write_byte(self, register: int, value: int):
+    def write_byte(self, register: int, value: int) -> None:
         """
         レジスタに1バイト書き込みます。
         """
-        self.log.debug("Write byte: reg=%s, val=%s", hex(register), hex(value))
+        self.log.debug("レジスタ %s にバイトを書き込み: %s", hex(register), hex(value))
         self.pi.i2c_write_byte_data(self.handle, register, value)
 
     def read_word(self, register: int) -> int:
@@ -424,10 +537,10 @@ class VL53L0X:
         val = self.pi.i2c_read_word_data(self.handle, register)
         # pigpioはリトルエンディアンで読み取りますが、VL53L0Xはビッグエンディアンです。
         value = ((val & 0xFF) << 8) | (val >> 8)
-        self.log.debug("Read word: reg=%s, val=%s", hex(register), hex(value))
+        self.log.debug("レジスタ %s からワードを読み取り: %s", hex(register), hex(value))
         return value
 
-    def write_word(self, register: int, value: int):
+    def write_word(self, register: int, value: int) -> None:
         """
         レジスタに1ワード書き込みます。
         """
@@ -440,13 +553,11 @@ class VL53L0X:
         レジスタからデータのブロックを読み取ります。
         """
         _, data = self.pi.i2c_read_i2c_block_data(
-            self.handle,
-            register,
-            count,
+            self.handle, register, count
         )
         return data
 
-    def write_block(self, register: int, data: list[int]):
+    def write_block(self, register: int, data: list[int]) -> None:
         """
         レジスタにデータのブロックを書き込みます。
         """

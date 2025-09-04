@@ -10,6 +10,8 @@ from . import __version__, get_logger, VL53L0X
 
 log = get_logger(__name__)
 
+_name = __name__
+
 @click.group(
     invoke_without_command=True,
     help="""
@@ -18,7 +20,7 @@ VL53L0X driver CLI
 )
 @click.option("--debug", "-d", is_flag=True, help="debug flag")
 @click.version_option(
-    __version__, "--version", "-v", "-V", message='%(version)s'
+    __version__, "--version", "-v", "-V", message='%(prog)s %(version)s'
 )
 @click.help_option("--help", "-h")
 @click.pass_context
@@ -48,7 +50,7 @@ get distance"""
 )
 @click.option("--debug", "-d", is_flag=True, default=False, help="debug flag")
 @click.version_option(
-    __version__, "--version", "-v", "-V", message='%(version)s'
+    __version__, "--version", "-v", "-V", message='%(prog)s %(version)s'
 )
 @click.help_option("--help", "-h")
 @click.pass_context
@@ -83,7 +85,7 @@ def get(ctx, count, interval, debug):
 )
 @click.option("--debug", "-d", is_flag=True, default=False, help="debug flag")
 @click.version_option(
-    __version__, "--version", "-v", "-V", message='%(version)s'
+    __version__, "--version", "-v", "-V", message='%(prog)s %(version)s'
 )
 @click.help_option("--help", "-h")
 @click.pass_context

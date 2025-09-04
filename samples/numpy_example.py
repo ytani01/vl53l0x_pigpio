@@ -22,18 +22,19 @@ def main(samples):
 
     try:
         print(f"Getting {samples} samples...")
-        # Get 100 samples
-        ranges = tof.get_ranges(samples)
 
-        print("---")
-        print(f"Mean:   {np.mean(ranges):.2f} mm")
-        print(f"Std dev: {np.std(ranges):.2f} mm")
-        print(f"Min:    {np.min(ranges)} mm")
-        print(f"Max:    {np.max(ranges)} mm")
-        print("---")
+        with VL53L0X(pi) as sensor:
+            # Get 100 samples
+            ranges = tof.get_ranges(samples)
+
+            print("---")
+            print(f"Mean:    {np.mean(ranges):.2f} mm")
+            print(f"Std dev: {np.std(ranges):.2f} mm")
+            print(f"Min:     {np.min(ranges)} mm")
+            print(f"Max:     {np.max(ranges)} mm")
+            print("---")
 
     finally:
-        tof.close()
         pi.stop()
 
 

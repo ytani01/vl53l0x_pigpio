@@ -1,6 +1,8 @@
 # ToDo.md
 
 ## 優先項目
+- [ ] `get_measurement_timing_budget`と`set_measurement_timing_budget`を実装する。 (要追加調査/外部API参照)
+  - 参考情報URL: [Pololu社:Arduino用 C++ ソースコード](https://github.com/pololu/vl53l0x-arduino)
 - [ ] ここまでできたら、ユーザーに報告して指示を待つ。
 
 

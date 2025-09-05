@@ -21,7 +21,7 @@ VL53L0X driver CLI
 )
 @click.help_option("--help", "-h")
 @click.pass_context
-def cli(ctx: click.Context, debug: bool):
+def cli(ctx: click.Context, debug: bool) -> None:
     """VL53L0X距離センサーのPythonドライバー用CLIツール。"""
     cmd_name = ctx.info_name
     subcmd_name = ctx.invoked_subcommand
@@ -51,7 +51,9 @@ get distance"""
 )
 @click.help_option("--help", "-h")
 @click.pass_context
-def get(ctx, count, interval, debug) -> None:
+def get(
+    ctx: click.Context, count: int, interval: float, debug: bool
+) -> None:
     """基本的な例を実行します。"""
     __log = get_logger(__name__, debug)
     __log.debug("count=%s, interval=%s", count, interval)
@@ -86,7 +88,7 @@ def get(ctx, count, interval, debug) -> None:
 )
 @click.help_option("--help", "-h")
 @click.pass_context
-def performance(ctx, count, debug):
+def performance(ctx: click.Context, count: int, debug: bool) -> None:
     """VL53L0Xセンサーの測定パフォーマンスを評価します。"""
     __log = get_logger(__name__, debug)
     __log.debug("count=%s", count)

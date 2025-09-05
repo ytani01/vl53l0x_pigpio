@@ -194,14 +194,14 @@ class VL53L0X:
         self.pi = pi
         self.i2c_bus = i2c_bus
         self.i2c_address = i2c_address
-        self.log = get_logger(__name__, debug)
-        self.log.debug(
+        self.__log = get_logger(self.__class__.__name__, debug)
+        self.__log.debug(
             "Open VL53L0X at i2c_bus=%s, i2c_address=%s",
             self.i2c_bus,
             hex(self.i2c_address),
         )
         self.handle = self.pi.i2c_open(self.i2c_bus, self.i2c_address)
-        self.log.debug("handle=%s", self.handle)
+        self.__log.debug("handle=%s", self.handle)
         self.initialize()
 
     def __enter__(self) -> "VL53L0X":
@@ -212,11 +212,15 @@ class VL53L0X:
 
     def __exit__(
         self, exc_type: type | None, exc_val: Exception | None, exc_tb: type | None
-    ):
+    ) -> None:
         """
         コンテキストマネージャーとして使用する際の終了ポイント。
         I2C接続を閉じます。
         """
+        self.__log.debug(
+            "exc_type=%s, exc_val=%s, exc_tb=%s",
+            exc_type, exc_val, exc_tb
+        )
         self.close()
 
     def _set_i2c_registers_initial_values(self) -> None:
@@ -261,7 +265,7 @@ class VL53L0X:
         # SYSTEM_SEQUENCE_CONFIGを設定して、構成のためにすべてのシーケンスを有効にする。
         self.write_byte(SYSTEM_SEQUENCE_CONFIG, VALUE_FF)
 
-    def _setup_spad_info(self):
+    def _setup_spad_info(self) -> None:
         """
         SPAD情報を設定します。
         """
@@ -411,7 +415,7 @@ class VL53L0X:
         """
         # 測定タイミングバジェットを取得して設定
         self.measurement_timing_budget_us = self.get_measurement_timing_budget()
-        self.log.debug(
+        self.__log.debug(
             "measurement_timing_budget_us=%s",
             self.measurement_timing_budget_us
         )
@@ -670,14 +674,14 @@ class VL53L0X:
         レジスタから1バイト読み取ります。
         """
         value = self.pi.i2c_read_byte_data(self.handle, register)
-        # self.log.debug("レジスタ %s からバイトを読み取り: %s", hex(register), hex(value))
-        return value
+        # self.__log.debug("レジスタ %s からバイトを読み取り: %s", hex(register), hex(value))
+        return int(value)
 
     def write_byte(self, register: int, value: int) -> None:
         """
         レジスタに1バイト書き込みます。
         """
-        # self.log.debug("レジスタ %s にバイトを書き込み: %s", hex(register), hex(value))
+        # self.__log.debug("レジスタ %s にバイトを書き込み: %s", hex(register), hex(value))
         self.pi.i2c_write_byte_data(self.handle, register, value)
 
     def read_word(self, register: int) -> int:
@@ -687,8 +691,8 @@ class VL53L0X:
         val = self.pi.i2c_read_word_data(self.handle, register)
         # pigpioはリトルエンディアンで読み取りますが、VL53L0Xはビッグエンディアンです。
         value = ((val & 0xFF) << 8) | (val >> 8)
-        # self.log.debug("レジスタ %s からワードを読み取り: %s", hex(register), hex(value))
-        return value
+        # self.__log.debug("レジスタ %s からワードを読み取り: %s", hex(register), hex(value))
+        return int(value)
 
     def write_word(self, register: int, value: int) -> None:
         """

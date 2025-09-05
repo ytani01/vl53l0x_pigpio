@@ -239,6 +239,12 @@ class VL53L0X:
         self.write_byte(REG_FF, VALUE_00)
         self.write_byte(REG_80, VALUE_00)
 
+        # I/O 2.8V エクスパンダ（推奨：一度だけ）
+        try:
+            self.write_byte(VHV_CFG_PAD_SCL_SDA_EXTSUP_HV, (self.read_byte(VHV_CFG_PAD_SCL_SDA_EXTSUP_HV) | 0x01))
+        except Exception:
+            pass
+
     def _configure_signal_rate_limit(self) -> None:
         """
         信号レート制限を設定します。
@@ -490,6 +496,14 @@ class VL53L0X:
     def _calc_macro_period(self, vcsel_period_pclks: int) -> int:
         return ((2304 * vcsel_period_pclks * 1655) + 500) // 1000  # [ns]
 
+    def _timeout_microseconds_to_mclks(
+            self, timeout_us: int, vcsel_period_pclks: int
+    ) -> int:
+        # C++版 VL53L0X_calc_timeout_mclks 相当
+        macro_period_ns = self._calc_macro_period(vcsel_period_pclks)
+        # round up
+        return (timeout_us * 1000 + (macro_period_ns // 2)) // macro_period_ns
+
     def _timeout_mclks_to_microseconds(self, timeout_mclks: int, vcsel_period_pclks: int) -> int:
         macro_period_ns = self._calc_macro_period(vcsel_period_pclks)
         return ((timeout_mclks * macro_period_ns) + 500) // 1000
@@ -573,7 +587,8 @@ class VL53L0X:
                 raise ValueError("Requested timing budget too small")
 
             final_range_vcsel_period_pclks = self.read_byte(FINAL_RANGE_CONFIG_VCSEL_PERIOD)
-            final_range_mclks = self._timeout_mclks_to_microseconds(
+            # ★ ここを μs→mclks に修正
+            final_range_mclks = self._timeout_microseconds_to_mclks(
                 final_range_us, final_range_vcsel_period_pclks
             )
 
@@ -587,42 +602,13 @@ class VL53L0X:
             return True
         return False
 
-
-    # def get_measurement_timing_budget(self) -> int:
-    #     """
-    #     現在の測定タイミングバジェットをマイクロ秒単位で取得します。
-    #     (実際のレジスタ実装はより複雑です。これはプレースホルダーです。)
-    #     """
-    #     # 実際のVL53L0Xドライバでは、複数のレジスタを読み取り、
-    #     # 有効なタイミングバジェットを計算する必要があります。
-    #     # ここではプレースホルダーとして固定値を返します。
-    #     return 500000  # 500ms (例)
-
-    # def set_measurement_timing_budget(self, budget_us: int) -> None:
-    #     """
-    #     測定タイミングバジェットをマイクロ秒単位で設定します。
-    #     (実際のレジスタ実装はより複雑です。これはプレースホルダーです。)
-    #     """
-    #     # 実際のVL53L0Xドライバでは、目的のタイミングバジェットに合わせて
-    #     # センサーを構成するために、一連のレジスタ書き込みが必要になります。
-    #     # (例: プリレンジ、ファイナルレンジ、様々なタイミングパラメータ)
-    #     # 現時点では、このメソッドは何もしません。
-    #     pass
-
     def perform_single_ref_calibration(self, vhv_init_byte: int) -> None:
-        """
-        単一のリファレンスキャリブレーションを実行します。
-        """
-        # 指定されたVHV初期バイトで測距を開始
         self.write_byte(SYSRANGE_START, VALUE_01 | vhv_init_byte)
-
-        # 完了を示す割り込みステータスの変化を待つ
         start = time.time()
+        # 2秒上限で待つ（環境により1秒だと落ちる場合がある）
         while (self.read_byte(RESULT_INTERRUPT_STATUS) & INTERRUPT_STATUS_MASK) == VALUE_00:
-            if time.time() - start > TIMEOUT_LIMIT:
-                raise Exception("Timeout")
-
-        # 割り込みをクリアし、測距を停止
+            if time.time() - start > 2.0:
+                raise Exception("Timeout during ref calibration")
         self.write_byte(SYSTEM_INTERRUPT_CLEAR, VALUE_01)
         self.write_byte(SYSRANGE_START, VALUE_00)
 
@@ -630,6 +616,7 @@ class VL53L0X:
         """
         単一の測距測定を実行し、結果をmm単位で返します。
         """
+        # stop_variable の復元シーケンス
         self.write_byte(REG_80, VALUE_01)
         self.write_byte(REG_FF, VALUE_01)
         self.write_byte(REG_00, VALUE_00)
@@ -638,24 +625,23 @@ class VL53L0X:
         self.write_byte(REG_FF, VALUE_00)
         self.write_byte(REG_80, VALUE_00)
 
+        # 測定開始（シングルショット）
         self.write_byte(SYSRANGE_START, VALUE_01)
 
-        start = time.time()
-        while self.read_byte(SYSRANGE_START) & VALUE_01:
-            if time.time() - start > TIMEOUT_LIMIT:
-                raise Exception("Timeout")
+        # 予算に応じた実時間で待つ（最低1.0s）
+        budget_s = getattr(self, "measurement_timing_budget_us", 33000) / 1_000_000.0
+        timeout_s = max(1.0, budget_s + 0.1)
 
+        # 割り込みステータス待ち（データ準備完了）
         start = time.time()
         while (self.read_byte(RESULT_INTERRUPT_STATUS) & INTERRUPT_STATUS_MASK) == VALUE_00:
-            if time.time() - start > TIMEOUT_LIMIT:
-                raise Exception("Timeout")
+            if time.time() - start > timeout_s:
+                raise Exception("Timeout waiting for measurement ready")
 
-        # 仮定: 線形性補正ゲインは1000 (デフォルト)
-        # 分数測距は無効
-        range_mm = self.read_word(
-            RESULT_RANGE_STATUS + VALUE_0A
-        )  # 10は0x0A
+        # 結果読み出し
+        range_mm = self.read_word(RESULT_RANGE_STATUS + VALUE_0A)  # 0x14 + 0x0A
 
+        # 割り込みクリア
         self.write_byte(SYSTEM_INTERRUPT_CLEAR, VALUE_01)
 
         return range_mm

@@ -52,7 +52,7 @@ class TestVL53L0XOffset(unittest.TestCase):
             # オフセットが適用されたか確認
             self.assertEqual(measured_distance, raw_measurement - offset)
 
-    @patch('vl53l0x_pigpio.config_manager.load_config')
+    @patch('vl53l0x_pigpio.driver.load_config')
     def test_init_with_config_file_loads_offset(self, mock_load_config) -> None:
         mock_load_config.return_value = {"offset_mm": 75}
         config_file_path = Path("/tmp/test_config.json")
@@ -61,7 +61,7 @@ class TestVL53L0XOffset(unittest.TestCase):
             self.assertEqual(tof.offset_mm, 75)
             mock_load_config.assert_called_once_with(config_file_path)
 
-    @patch('vl53l0x_pigpio.config_manager.load_config')
+    @patch('vl53l0x_pigpio.driver.load_config')
     def test_init_with_config_file_no_offset(self, mock_load_config) -> None:
         mock_load_config.return_value = {}
         config_file_path = Path("/tmp/test_config.json")

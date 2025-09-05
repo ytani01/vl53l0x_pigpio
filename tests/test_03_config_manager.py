@@ -37,15 +37,16 @@ class TestConfigManager(unittest.TestCase):
         config = load_config(filepath)
         self.assertEqual(config, {})
 
+    @patch('json.dump')
     @patch('builtins.open', new_callable=mock_open)
     @patch('pathlib.Path.mkdir')
-    def test_save_config(self, mock_mkdir, mock_file):
+    def test_save_config(self, mock_mkdir, mock_file, mock_json_dump):
         filepath = Path("/tmp/test_config.json")
         config_data = {"offset_mm": 10}
         save_config(filepath, config_data)
         mock_mkdir.assert_called_once_with(parents=True, exist_ok=True)
         mock_file.assert_called_once_with(filepath, "w", encoding="utf-8")
-        mock_file.return_value.write.assert_called_once_with(json.dumps(config_data, indent=4))
+        mock_json_dump.assert_called_once_with(config_data, mock_file(), indent=4)
 
 
 if __name__ == '__main__':

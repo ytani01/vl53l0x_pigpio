@@ -11,7 +11,7 @@ from vl53l0x_pigpio.constants import (
 
 class TestVL53L0XDriver(unittest.TestCase):
 
-    def setUp(self):
+    def setUp(self) -> None:
         # Mock pigpio.pi
         self.mock_pi = Mock(spec=pigpio.pi)
         self.mock_pi.connected = True
@@ -44,7 +44,7 @@ class TestVL53L0XDriver(unittest.TestCase):
             (count, bytearray([0x00] * count))
         )
 
-        def i2c_read_byte_data_side_effect(handle, register):
+        def i2c_read_byte_data_side_effect(handle: int, register: int) -> int:
             if register in self.mock_read_byte_data_returns:
                 return_value = self.mock_read_byte_data_returns[register]
                 if callable(return_value):
@@ -52,9 +52,11 @@ class TestVL53L0XDriver(unittest.TestCase):
                 if isinstance(return_value, list):
                     # If it's a list, pop the first element for sequential reads
                     if return_value:
-                        return return_value.pop(0)
+                        return int(return_value.pop(0))
                     return 0x00 # Default if list is empty
-                return return_value
+                if isinstance(return_value, (int, float)):
+                    return int(return_value)
+                return 0x00
             # Fallback to original side_effect or a default value if not explicitly mocked
             return 0x00 # Default for unmocked registers
 
@@ -68,10 +70,10 @@ class TestVL53L0XDriver(unittest.TestCase):
         self.patcher = patch('pigpio.pi', return_value=self.mock_pi)
         self.mock_pigpio_pi_class = self.patcher.start()
 
-    def tearDown(self):
+    def tearDown(self) -> None:
         self.patcher.stop()
 
-    def test_initialization(self):
+    def test_initialization(self) -> None:
         # Test if the driver can be initialized
         with VL53L0X(self.mock_pi) as tof:
             self.assertIsInstance(tof, VL53L0X)
@@ -79,7 +81,7 @@ class TestVL53L0XDriver(unittest.TestCase):
             # Ensure close is called when exiting the context
         self.mock_pi.i2c_close.assert_called_once()
 
-    def test_get_range(self):
+    def test_get_range(self) -> None:
         # Mock a specific range value
         # VL53L0X returns big-endian, pigpio reads little-endian, so we mock pigpio's return
         # For example, if we want 1234mm (0x04D2), pigpio would read 0xD204
@@ -90,13 +92,13 @@ class TestVL53L0XDriver(unittest.TestCase):
             self.assertEqual(distance, 1234)
             self.mock_pi.i2c_read_word_data.assert_called()
 
-    def test_get_ranges(self):
+    def test_get_ranges(self) -> None:
         num_samples = 5
         # Mock a sequence of range values
         mock_ranges_pigpio_endian = [0xD204, 0xD304, 0xD404, 0xD504, 0xD604] # 1234, 1235, 1236, 1237, 1238
         range_iterator = iter(mock_ranges_pigpio_endian)
 
-        def read_word_side_effect(handle, register):
+        def read_word_side_effect(handle: int, register: int) -> int:
             if register == 30: # RESULT_RANGE_STATUS + 10
                 return next(range_iterator)
             return 0
@@ -111,19 +113,19 @@ class TestVL53L0XDriver(unittest.TestCase):
             self.assertTrue(np.array_equal(ranges, np.array([1234, 1235, 1236, 1237, 1238])))
             self.assertEqual(self.mock_pi.i2c_read_word_data.call_count, num_samples + 4) # +4 for initialization
 
-    def test_read_byte(self):
+    def test_read_byte(self) -> None:
         self.mock_pi.i2c_read_byte_data.return_value = 0xCD
         with VL53L0X(self.mock_pi) as tof:
             value = tof.read_byte(0x02)
             self.assertEqual(value, 0xCD)
             self.mock_pi.i2c_read_byte_data.assert_called_with(1, 0x02)
 
-    def test_write_byte(self):
+    def test_write_byte(self) -> None:
         with VL53L0X(self.mock_pi) as tof:
             tof.write_byte(0x02, 0xCD)
             self.mock_pi.i2c_write_byte_data.assert_called_with(1, 0x02, 0xCD)
 
-    def test_read_word(self):
+    def test_read_word(self) -> None:
         # Mock pigpio reading 0xCDAB (little-endian for 0xABCD)
         self.mock_pi.i2c_read_word_data.return_value = 0xCDAB
         with VL53L0X(self.mock_pi) as tof:
@@ -131,13 +133,13 @@ class TestVL53L0XDriver(unittest.TestCase):
             self.assertEqual(value, 0xABCD)
             self.mock_pi.i2c_read_word_data.assert_called_with(1, 0x03)
 
-    def test_write_word(self):
+    def test_write_word(self) -> None:
         # We want to write 0xABCD, which pigpio should receive as 0xCDAB
         with VL53L0X(self.mock_pi) as tof:
             tof.write_word(0x04, 0xABCD)
             self.mock_pi.i2c_write_word_data.assert_called_with(1, 0x04, 0xCDAB)
 
-    def test_read_block(self):
+    def test_read_block(self) -> None:
         mock_block_data = [0x11, 0x22, 0x33]
         self.mock_pi.i2c_read_i2c_block_data.return_value = (0, mock_block_data)
         with VL53L0X(self.mock_pi) as tof:
@@ -145,7 +147,7 @@ class TestVL53L0XDriver(unittest.TestCase):
             self.assertEqual(data, mock_block_data)
             self.mock_pi.i2c_read_i2c_block_data.assert_called_with(1, 0x05, 3)
 
-    def test_write_block(self):
+    def test_write_block(self) -> None:
         test_data = [0xAA, 0xBB, 0xCC]
         with VL53L0X(self.mock_pi) as tof:
             tof.write_block(0x06, test_data)

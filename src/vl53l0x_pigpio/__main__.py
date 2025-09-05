@@ -119,3 +119,32 @@ def performance(ctx: click.Context, count: int, debug: bool) -> None:
             click.echo("---")
     finally:
         pi.stop()
+
+
+@cli.command(help="""calibrate offset""" )
+@click.option("--distance", "-D", type=int, default=100, show_default=True, help="distance to target [mm]")
+@click.option("--count", "-c", type=int, default=10, show_default=True, help="count")
+@click.option("--debug", "-d", is_flag=True, default=False, help="debug flag")
+@click.pass_context
+def calibrate(ctx: click.Context, distance: int, count: int, debug: bool) -> None:
+    """オフセットをキャリブレーションします。"""
+    __log = get_logger(__name__, debug)
+    __log.debug("distance=%s, count=%s", distance, count)
+
+    pi = pigpio.pi()
+    if not pi.connected:
+        raise click.ClickException("cannot connect to pigpiod")
+
+    try:
+        with VL53L0X(pi, debug=debug) as sensor:
+            click.echo(f"{distance}mmの距離にターゲットを置いてください。")
+            click.echo("準備ができたらEnterキーを押してください...")
+            input()
+
+            offset = sensor.calibrate(distance, count)
+
+            click.echo(f"測定結果から計算されたオフセット値: {offset} mm")
+            click.echo("この値を set_offset() に設定して使用してください。")
+
+    finally:
+        pi.stop()

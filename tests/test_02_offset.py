@@ -5,7 +5,7 @@ from vl53l0x_pigpio.driver import VL53L0X
 
 class TestVL53L0XOffset(unittest.TestCase):
 
-    def setUp(self):
+    def setUp(self) -> None:
         self.mock_pi = Mock()
         self.mock_pi.i2c_open.return_value = 1
         self.mock_pi.i2c_read_byte_data.side_effect = self.mock_read_byte_data
@@ -24,13 +24,13 @@ class TestVL53L0XOffset(unittest.TestCase):
             0x13: 0x01, # To exit the loop in get_range
         }
 
-    def tearDown(self):
+    def tearDown(self) -> None:
         self.patcher.stop()
 
-    def mock_read_byte_data(self, handle, register):
+    def mock_read_byte_data(self, handle: int, register: int) -> int:
         return self.reg_map.get(register, 0)
 
-    def test_offset_correction(self):
+    def test_offset_correction(self) -> None:
         """
         オフセット補正が正しく機能するかテストする
         """

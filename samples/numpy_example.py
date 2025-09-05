@@ -9,34 +9,10 @@ from vl53l0x_pigpio.driver import VL53L0X
 
 
 @click.command()
-@click.argument("samples", type=int, default=100)
-def main(samples):
-    """
-    Main function
-    """
-    pi = pigpio.pi()
-    if not pi.connected:
-        raise RuntimeError("Could not connect to pigpio.")
-
-    tof = VL53L0X(pi)
-
-    try:
-        print(f"Getting {samples} samples...")
-
-        with VL53L0X(pi) as sensor:
-            # Get 100 samples
-            ranges = tof.get_ranges(samples)
-
-            print("---")
-            print(f"Mean:    {np.mean(ranges):.2f} mm")
-            print(f"Std dev: {np.std(ranges):.2f} mm")
-            print(f"Min:     {np.min(ranges)} mm")
-            print(f"Max:     {np.max(ranges)} mm")
-            print("---")
-
-    finally:
-        pi.stop()
-
-
-if __name__ == "__main__":
-    main()
+@click.option(
+    "--samples", "-s", type=int, default=100, show_default=True,
+    help="number of samples"
+)
+@click.option("--debug", "-d", is_flag=True, default=False, help="debug flag")
+def main(samples: int, debug: bool) -> None:
+    pass

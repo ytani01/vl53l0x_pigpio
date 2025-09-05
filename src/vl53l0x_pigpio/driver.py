@@ -673,6 +673,37 @@ class VL53L0X:
             samples[i] = self.get_range()
         return samples
 
+    def calibrate(self, target_distance_mm: int, num_samples: int) -> int:
+        """
+        指定されたターゲット距離でキャリブレーションを行い、オフセット値を計算します。
+
+        Args:
+            target_distance_mm (int): ターゲットまでの実際の距離 (mm)
+            num_samples (int): 測定回数
+
+        Returns:
+            int: 計算されたオフセット値 (mm)
+        """
+        self.__log.debug(
+            "Calibrating with target_distance_mm=%s, num_samples=%s",
+            target_distance_mm, num_samples
+        )
+
+        # オフセットを一時的に0にして測定
+        current_offset = self.offset_mm
+        self.set_offset(0)
+
+        samples = self.get_ranges(num_samples)
+        measured_distance = int(np.mean(samples))
+
+        # オフセットを元に戻す
+        self.set_offset(current_offset)
+
+        offset = measured_distance - target_distance_mm
+        self.__log.debug("measured_distance=%s, offset=%s", measured_distance, offset)
+
+        return offset
+
     def close(self) -> None:
         """
         I2C接続を閉じます。

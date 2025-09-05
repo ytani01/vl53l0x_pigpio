@@ -74,7 +74,6 @@ uv run vl53l0x_pigpio get [OPTIONS]
 **オプション:**
 - `-c, --count INTEGER`: 測定回数 (デフォルト: 10)
 - `-i, --interval FLOAT`: 測定間隔（秒） (デフォルト: 1.0)
-- `-d, --debug`: デバッグモードを有効にする
 
 **例:**
 ```bash
@@ -92,7 +91,6 @@ uv run vl53l0x_pigpio performance [OPTIONS]
 
 **オプション:**
 - `--count INTEGER`: 測定回数 (デフォルト: 100)
-- `-d, --debug`: デバッグモードを有効にする
 
 **例:**
 ```bash
@@ -118,13 +116,30 @@ uv run vl53l0x_pigpio calibrate [OPTIONS]
 - `-D, --distance INTEGER`: ターゲットまでの距離 [mm] (デフォルト: 100)
 - `-c, --count INTEGER`: 測定回数 (デフォルト: 10)
 - `-o, --output-file TEXT`: オフセットを保存するファイルパス (デフォルト: `~/vl53l0x.json`)
-- `-d, --debug`: デバッグモードを有効にする
 
 **例:**
 ```bash
 # 15cm (150mm) の距離でキャリブレーション
 uv run vl53l0x_pigpio calibrate --distance 150
 ```
+
+## 参考情報
+
+- [Pololu社:Arduino用 C++ ソースコード](https://github.com/pololu/vl53l0x-arduino)
+- https://github.com/cassou/VL53L0X_rasp
+- https://github.com/johnbryanmoore/VL53L0X_rasp_python
+
+
+## AIの活用
+
+以下のAIと **協力しながら** 作成しました。
+とはいえ、作らせっぱなしにするのではなく、
+随時人間が確認し、相当な手を加えています。
+
+- [Gemini CLI](https://github.com/google-gemini/gemini-cli)
+- [ChatGPT](https://chatgpt.com/)
+- [claude](https://claude.ai/)
+
 
 ## ライセンス
 

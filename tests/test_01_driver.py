@@ -5,7 +5,8 @@ import pigpio
 from vl53l0x_pigpio.driver import VL53L0X
 from vl53l0x_pigpio.constants import (
     VALUE_00, VALUE_01, VALUE_10, VALUE_83, REG_92,
-    GLOBAL_CFG_SPAD_ENABLES_REF_0, MSRC_CONFIG_CONTROL, SYSRANGE_START, RESULT_INTERRUPT_STATUS
+    GLOBAL_CFG_SPAD_ENABLES_REF_0, MSRC_CONFIG_CONTROL, SYSRANGE_START, RESULT_INTERRUPT_STATUS,
+    PRE_RANGE_CONFIG_VCSEL_PERIOD, FINAL_RANGE_CONFIG_VCSEL_PERIOD, SYSTEM_SEQUENCE_CONFIG
 )
 
 class TestVL53L0XDriver(unittest.TestCase):
@@ -30,14 +31,17 @@ class TestVL53L0XDriver(unittest.TestCase):
             # For perform_single_ref_calibration and get_range (simplified for debugging)
             RESULT_INTERRUPT_STATUS: lambda: [VALUE_01], # Return VALUE_01 immediately
             SYSRANGE_START: lambda: [VALUE_00], # Return VALUE_00 immediately after first read
-            0x01: 0xAB, # For test_read_byte
+            PRE_RANGE_CONFIG_VCSEL_PERIOD: 14,
+            FINAL_RANGE_CONFIG_VCSEL_PERIOD: 10,
+            SYSTEM_SEQUENCE_CONFIG: 0xE8,
+            0x02: 0xCD, # For test_read_byte
         }
 
         # Mock for i2c_read_i2c_block_data specifically for GLOBAL_CFG_SPAD_ENABLES_REF_0 and test_read_block
         self.mock_pi.i2c_read_i2c_block_data.side_effect = lambda handle, register, count: (
-            (0, [0x00] * 6) if register == GLOBAL_CFG_SPAD_ENABLES_REF_0 and count == 6 else
-            (0, [0x11, 0x22, 0x33]) if register == 0x05 and count == 3 else # For test_read_block
-            (0, [0x00] * count)
+            (6, bytearray([0x00] * 6)) if register == GLOBAL_CFG_SPAD_ENABLES_REF_0 and count == 6 else
+            (3, bytearray([0x11, 0x22, 0x33])) if register == 0x05 and count == 3 else # For test_read_block
+            (count, bytearray([0x00] * count))
         )
 
         def i2c_read_byte_data_side_effect(handle, register):
@@ -90,23 +94,29 @@ class TestVL53L0XDriver(unittest.TestCase):
         num_samples = 5
         # Mock a sequence of range values
         mock_ranges_pigpio_endian = [0xD204, 0xD304, 0xD404, 0xD504, 0xD604] # 1234, 1235, 1236, 1237, 1238
-        
+        range_iterator = iter(mock_ranges_pigpio_endian)
+
+        def read_word_side_effect(handle, register):
+            if register == 30: # RESULT_RANGE_STATUS + 10
+                return next(range_iterator)
+            return 0
+
         # Configure the mock to return different values on successive calls
-        self.mock_pi.i2c_read_word_data.side_effect = mock_ranges_pigpio_endian
+        self.mock_pi.i2c_read_word_data.side_effect = read_word_side_effect
 
         with VL53L0X(self.mock_pi) as tof:
             ranges = tof.get_ranges(num_samples)
             self.assertIsInstance(ranges, np.ndarray)
             self.assertEqual(ranges.shape, (num_samples,))
             self.assertTrue(np.array_equal(ranges, np.array([1234, 1235, 1236, 1237, 1238])))
-            self.assertEqual(self.mock_pi.i2c_read_word_data.call_count, num_samples)
+            self.assertEqual(self.mock_pi.i2c_read_word_data.call_count, num_samples + 4) # +4 for initialization
 
     def test_read_byte(self):
-        self.mock_pi.i2c_read_byte_data.return_value = 0xAB
+        self.mock_pi.i2c_read_byte_data.return_value = 0xCD
         with VL53L0X(self.mock_pi) as tof:
-            value = tof.read_byte(0x01)
-            self.assertEqual(value, 0xAB)
-            self.mock_pi.i2c_read_byte_data.assert_called_with(1, 0x01)
+            value = tof.read_byte(0x02)
+            self.assertEqual(value, 0xCD)
+            self.mock_pi.i2c_read_byte_data.assert_called_with(1, 0x02)
 
     def test_write_byte(self):
         with VL53L0X(self.mock_pi) as tof:

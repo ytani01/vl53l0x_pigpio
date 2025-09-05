@@ -202,6 +202,7 @@ class VL53L0X:
         )
         self.handle = self.pi.i2c_open(self.i2c_bus, self.i2c_address)
         self.__log.debug("handle=%s", self.handle)
+        self.offset_mm = 0
         self.initialize()
 
     def __enter__(self) -> "VL53L0X":
@@ -652,7 +653,16 @@ class VL53L0X:
         # 割り込みクリア
         self.write_byte(SYSTEM_INTERRUPT_CLEAR, VALUE_01)
 
-        return range_mm
+        return range_mm - self.offset_mm
+
+    def set_offset(self, offset_mm: int) -> None:
+        """
+        測定値のオフセット(mm)を設定します。
+
+        Args:
+            offset_mm (int): オフセット値 (mm)
+        """
+        self.offset_mm = offset_mm
 
     def get_ranges(self, num_samples: int) -> np.ndarray:
         """

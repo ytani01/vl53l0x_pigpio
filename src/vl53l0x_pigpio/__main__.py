@@ -131,15 +131,25 @@ def performance(ctx: click.Context, count: int, debug: bool) -> None:
         pi.stop()
 
 
-@cli.command(help="""calibrate offset""" )
-@click.option("--distance", "-D", type=int, default=100, show_default=True, help="distance to target [mm]")
-@click.option("--count", "-c", type=int, default=10, show_default=True, help="count")
+@cli.command(help="""calibrate offset and save""" )
+@click.option(
+    "--distance", "-D", type=int, default=100, show_default=True,
+    help="distance to target [mm]"
+)
+@click.option(
+    "--count", "-c", type=int, default=10, show_default=True,
+    help="count"
+)
 @click.option(
     "--output-file", "-o", type=str,
     default=str(get_default_config_filepath()), show_default=True,
     help="Path to save the calculated offset"
 )
 @click.option("--debug", "-d", is_flag=True, default=False, help="debug flag")
+@click.version_option(
+    __version__, "--version", "-v", "-V", message='%(prog)s %(version)s'
+)
+@click.help_option("--help", "-h")
 @click.pass_context
 def calibrate(ctx: click.Context, distance: int, count: int, output_file: str, debug: bool) -> None:
     """オフセットをキャリブレーションします。"""
@@ -153,7 +163,9 @@ def calibrate(ctx: click.Context, distance: int, count: int, output_file: str, d
         raise click.ClickException("cannot connect to pigpiod")
 
     try:
-        with VL53L0X(pi, debug=debug, config_file_path=ctx.obj["config_file"]) as sensor:
+        with VL53L0X(
+                pi, debug=debug, config_file_path=ctx.obj["config_file"]
+        ) as sensor:
             click.echo(f"{distance}mmの距離にターゲットを置いてください。")
             click.echo("準備ができたらEnterキーを押してください...")
             input()

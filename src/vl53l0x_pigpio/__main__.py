@@ -51,7 +51,7 @@ get distance"""
 )
 @click.help_option("--help", "-h")
 @click.pass_context
-def get(ctx, count, interval, debug):
+def get(ctx, count, interval, debug) -> None:
     """基本的な例を実行します。"""
     __log = get_logger(__name__, debug)
     __log.debug("count=%s, interval=%s", count, interval)

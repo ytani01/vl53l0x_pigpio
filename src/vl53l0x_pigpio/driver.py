@@ -534,6 +534,9 @@ class VL53L0X:
         budget_us = 1910  # Start overhead
         enables = self.read_byte(SYSTEM_SEQUENCE_CONFIG)
 
+        pre_range_us: int = 0
+        pre_range_mclks: int | None = None
+
         # pre-range
         if (enables >> 6) & 0x01:
             pre_range_vcsel_period_pclks = self.read_byte(PRE_RANGE_CONFIG_VCSEL_PERIOD)
@@ -553,7 +556,8 @@ class VL53L0X:
             )
 
             if (enables >> 6) & 0x01:  # if pre-range enabled, subtract it
-                final_range_mclks -= pre_range_mclks
+                if pre_range_mclks is not None:
+                    final_range_mclks -= pre_range_mclks
 
             final_range_us = self._timeout_mclks_to_microseconds(
                 final_range_mclks, final_range_vcsel_period_pclks

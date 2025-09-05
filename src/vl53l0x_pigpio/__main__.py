@@ -5,8 +5,10 @@ import time
 
 import click
 import pigpio
+from pathlib import Path
 
 from . import __version__, get_logger, VL53L0X
+from .config_manager import get_default_config_filepath
 
 
 @click.group(
@@ -16,12 +18,17 @@ VL53L0X driver CLI
 """
 )
 @click.option("--debug", "-d", is_flag=True, help="debug flag")
+@click.option(
+    "--config-file", "-C", type=click.Path(path_type=Path),
+    default=get_default_config_filepath(), show_default=True,
+    help="Path to the configuration file"
+)
 @click.version_option(
     __version__, "--version", "-v", "-V", message='%(prog)s %(version)s'
 )
 @click.help_option("--help", "-h")
 @click.pass_context
-def cli(ctx: click.Context, debug: bool) -> None:
+def cli(ctx: click.Context, debug: bool, config_file: Path) -> None:
     """VL53L0X距離センサーのPythonドライバー用CLIツール。"""
     cmd_name = ctx.info_name
     subcmd_name = ctx.invoked_subcommand
@@ -30,6 +37,9 @@ def cli(ctx: click.Context, debug: bool) -> None:
 
     __log.debug("cmd_name=%a, subcmd_name=%a", cmd_name, subcmd_name)
     
+    # Pass config_file to the context object for subcommands
+    ctx.obj = {"config_file": config_file}
+
     if subcmd_name is None:
         print(f"{ctx.get_help()}")
 
@@ -66,7 +76,7 @@ def get(
         raise click.ClickException("cannnto connect pigpiod")
 
     try:
-        with VL53L0X(pi, debug=debug) as sensor:
+        with VL53L0X(pi, debug=debug, config_file_path=ctx.obj["config_file"]) as sensor:
             for i in range(count):
                 distance: int = sensor.get_range()
                 if distance > 0:
@@ -101,7 +111,7 @@ def performance(ctx: click.Context, count: int, debug: bool) -> None:
         raise click.ClickException("cannnto connect pigpiod")
 
     try:
-        with VL53L0X(pi, debug=debug) as sensor:
+        with VL53L0X(pi, debug=debug, config_file_path=ctx.obj["config_file"]) as sensor:
             click.echo(f"{count}回の距離測定パフォーマンスを評価します...")
             start_time = time.perf_counter()
             for _ in range(count):
@@ -124,19 +134,24 @@ def performance(ctx: click.Context, count: int, debug: bool) -> None:
 @cli.command(help="""calibrate offset""" )
 @click.option("--distance", "-D", type=int, default=100, show_default=True, help="distance to target [mm]")
 @click.option("--count", "-c", type=int, default=10, show_default=True, help="count")
+@click.option(
+    "--output-file", "-o", type=click.Path(path_type=Path),
+    default=get_default_config_filepath(), show_default=True,
+    help="Path to save the calculated offset"
+)
 @click.option("--debug", "-d", is_flag=True, default=False, help="debug flag")
 @click.pass_context
-def calibrate(ctx: click.Context, distance: int, count: int, debug: bool) -> None:
+def calibrate(ctx: click.Context, distance: int, count: int, output_file: Path, debug: bool) -> None:
     """オフセットをキャリブレーションします。"""
     __log = get_logger(__name__, debug)
-    __log.debug("distance=%s, count=%s", distance, count)
+    __log.debug("distance=%s, count=%s, output_file=%s", distance, count, output_file)
 
     pi = pigpio.pi()
     if not pi.connected:
         raise click.ClickException("cannot connect to pigpiod")
 
     try:
-        with VL53L0X(pi, debug=debug) as sensor:
+        with VL53L0X(pi, debug=debug, config_file_path=ctx.obj["config_file"]) as sensor:
             click.echo(f"{distance}mmの距離にターゲットを置いてください。")
             click.echo("準備ができたらEnterキーを押してください...")
             input()
@@ -145,6 +160,11 @@ def calibrate(ctx: click.Context, distance: int, count: int, debug: bool) -> Non
 
             click.echo(f"測定結果から計算されたオフセット値: {offset} mm")
             click.echo("この値を set_offset() に設定して使用してください。")
+
+            # オフセット値をファイルに保存
+            config_data = {"offset_mm": offset}
+            save_config(output_file, config_data)
+            click.echo(f"オフセット値を {output_file} に保存しました。")
 
     finally:
         pi.stop()

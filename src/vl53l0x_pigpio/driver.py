@@ -6,8 +6,10 @@
 import time
 import pigpio
 import numpy as np
+from pathlib import Path
 
 from .my_logger import get_logger
+from .config_manager import load_config
 
 
 # レジスタアドレス
@@ -187,7 +189,7 @@ class VL53L0X:
     VL53L0X driver.
     """
 
-    def __init__(self, pi: pigpio.pi, i2c_bus: int = 1, i2c_address: int = 0x29, debug: bool = False):
+    def __init__(self, pi: pigpio.pi, i2c_bus: int = 1, i2c_address: int = 0x29, debug: bool = False, config_file_path: Path | None = None):
         """
         Initialize the VL53L0X sensor.
         """
@@ -203,6 +205,14 @@ class VL53L0X:
         self.handle = self.pi.i2c_open(self.i2c_bus, self.i2c_address)
         self.__log.debug("handle=%s", self.handle)
         self.offset_mm = 0
+
+        # Load offset from config file if provided
+        if config_file_path:
+            config = load_config(config_file_path)
+            if "offset_mm" in config:
+                self.set_offset(config["offset_mm"])
+                self.__log.debug("Loaded offset_mm=%s from %s", self.offset_mm, config_file_path)
+
         self.initialize()
 
     def __enter__(self) -> "VL53L0X":

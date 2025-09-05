@@ -60,7 +60,7 @@
 - `Tasks.md`の内容を変更した場合は、**必ず** タスクを実行していいか、ユーザーに問い合わせ、'go ahead'と言われるまで実行しない。
 - `Tasks.md`がすべてチェックできたら、以下を行う。
   1. `ToDo.md` を確認して、完了した内容にはチェックを入れる。
-  2. `Tasks.md` を `yyyymmdd-HHMM-Tasks-done.md` の形式にリネームして、`archives`ディレクトリに移動する。(`yyyymmdd-HHMM`の部分は、日時)
+  2. `Tasks.md` を `yyyymmdd-HHMM-Tasks-done.md` の形式にリネームして、`archives`ディレクトリに移動する。(`yyyymmdd-HHMM`の部分は、日付と時刻)
 
 
 ### `Task.md` が存在しない場合

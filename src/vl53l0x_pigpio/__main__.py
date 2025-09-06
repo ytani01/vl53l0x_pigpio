@@ -7,7 +7,7 @@ import click
 import pigpio
 from pathlib import Path
 
-from . import __version__, get_logger, VL53L0X
+from . import __version__, click_common_opts, get_logger, VL53L0X
 from .config_manager import get_default_config_filepath, save_config
 
 
@@ -23,11 +23,12 @@ VL53L0X driver CLI
     default=str(get_default_config_filepath()), show_default=True,
     help="Path to the configuration file"
 )
-@click.version_option(
-    __version__, "--version", "-v", "-V", message='%(prog)s %(version)s'
-)
-@click.help_option("--help", "-h")
-@click.pass_context
+@click_common_opts()
+# @click.version_option(
+#     __version__, "--version", "-v", "-V", message='%(prog)s %(version)s'
+# )
+# @click.help_option("--help", "-h")
+# @click.pass_context
 def cli(ctx: click.Context, debug: bool, config_file: str) -> None:
     """VL53L0X距離センサーのPythonドライバー用CLIツール。"""
     cmd_name = ctx.info_name

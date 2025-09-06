@@ -5,27 +5,29 @@ import click
 
 def click_common_opts(
     use_h: bool = True, use_d: bool = True, use_v: bool = True,
-    ver_str: str = "0.0.1"
+    ver_str: str = "?.?.?"
 ):
     """共通オプションをまとめたメタデコレータ"""
     def _decorator(func):
         decorators = []
 
         # version option
-        ver_opts = ["--version"]
+        ver_opts = ["--version", "-V"]
         if use_v:
-            ver_opts += ["-v", "-V"]
-        else:
-            ver_opts += ["-V"]
+            ver_opts.append("-v")
         decorators.append(
-            click.version_option(ver_str, *ver_opts, message="%(prog)s %(version)s")
+            click.version_option(
+                ver_str, *ver_opts, message="%(prog)s %(version)s"
+            )
         )
 
         # debug option
         debug_opts = ["--debug"]
         if use_d:
             debug_opts.append("-d")
-        decorators.append(click.option(*debug_opts, is_flag=True, help="debug flag"))
+        decorators.append(
+            click.option(*debug_opts, is_flag=True, help="debug flag")
+        )
 
         # help option
         help_opts = ["--help"]

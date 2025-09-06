@@ -17,18 +17,12 @@ from .config_manager import get_default_config_filepath, save_config
 VL53L0X driver CLI
 """
 )
-@click.option("--debug", "-d", is_flag=True, help="debug flag")
 @click.option(
     "--config-file", "-C", type=str,
     default=str(get_default_config_filepath()), show_default=True,
     help="Path to the configuration file"
 )
-@click_common_opts()
-# @click.version_option(
-#     __version__, "--version", "-v", "-V", message='%(prog)s %(version)s'
-# )
-# @click.help_option("--help", "-h")
-# @click.pass_context
+@click_common_opts(ver_str=__version__)
 def cli(ctx: click.Context, debug: bool, config_file: str) -> None:
     """VL53L0X距離センサーのPythonドライバー用CLIツール。"""
     cmd_name = ctx.info_name
@@ -56,12 +50,7 @@ get distance"""
     "--interval", "-i", type=float, default=1.0, show_default=True,
     help="interval seconds"
 )
-@click.option("--debug", "-d", is_flag=True, default=False, help="debug flag")
-@click.version_option(
-    __version__, "--version", "-v", "-V", message='%(prog)s %(version)s'
-)
-@click.help_option("--help", "-h")
-@click.pass_context
+@click_common_opts(ver_str=__version__)
 def get(
     ctx: click.Context, count: int, interval: float, debug: bool
 ) -> None:
@@ -91,14 +80,9 @@ def get(
 
 @cli.command()
 @click.option(
-    "--count", type=int, default=100, show_default=True, help="count"
+    "--count", "-c", type=int, default=100, show_default=True, help="count"
 )
-@click.option("--debug", "-d", is_flag=True, default=False, help="debug flag")
-@click.version_option(
-    __version__, "--version", "-v", "-V", message='%(prog)s %(version)s'
-)
-@click.help_option("--help", "-h")
-@click.pass_context
+@click_common_opts(ver_str=__version__)
 def performance(ctx: click.Context, count: int, debug: bool) -> None:
     """VL53L0Xセンサーの測定パフォーマンスを評価します。"""
     __log = get_logger(__name__, debug)
@@ -146,12 +130,7 @@ def performance(ctx: click.Context, count: int, debug: bool) -> None:
     default=str(get_default_config_filepath()), show_default=True,
     help="Path to save the calculated offset"
 )
-@click.option("--debug", "-d", is_flag=True, default=False, help="debug flag")
-@click.version_option(
-    __version__, "--version", "-v", "-V", message='%(prog)s %(version)s'
-)
-@click.help_option("--help", "-h")
-@click.pass_context
+@click_common_opts(ver_str=__version__)
 def calibrate(ctx: click.Context, distance: int, count: int, output_file: str, debug: bool) -> None:
     """オフセットをキャリブレーションします。"""
     __log = get_logger(__name__, debug)

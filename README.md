@@ -1,17 +1,17 @@
 # VL53L0X pigpio
 
-## 概要
+## ◆概要
 
 `pigpio`ライブラリを使用してVL53L0X距離センサーを制御するためのPythonドライバーです。
 Raspberry Pi Zero 2Wのような低スペックの環境でも動作するように設計されています。
 
-## 特徴
+## ◆特徴
 
 - `pigpio` を利用し、すべてPythonで実装
 - ライブラリとして、またCLIツールとして利用可能
 - オフセットキャリブレーション機能
 
-## インストール
+## ◆インストール
 
 リポジトリをクローンして`uv`を使用してください。
 
@@ -22,7 +22,7 @@ uv venv
 uv pip install -e .
 ```
 
-## ライブラリとしての使い方
+## ◆ライブラリとしての使い方
 
 基本的な使い方は以下の通りです。
 
@@ -52,18 +52,18 @@ finally:
     pi.stop()
 ```
 
-## CLIツールの使い方
+## ◆CLIツールの使い方
 
 このパッケージには、コマンドラインからセンサーを操作するための`vl53l0x_pigpio`コマンドが含まれています。
 コマンドの実行には `uv run` を使用します。
 
-### ヘルプ
+### === ヘルプ
 
 ```bash
 uv run vl53l0x_pigpio --help
 ```
 
-### 距離の測定 (`get`)
+### === 距離の測定 (`get`)
 
 指定した回数だけ距離を測定します。
 
@@ -81,7 +81,7 @@ uv run vl53l0x_pigpio get [OPTIONS]
 uv run vl53l0x_pigpio get --count 5
 ```
 
-### パフォーマンス測定 (`performance`)
+### === パフォーマンス測定 (`performance`)
 
 センサーの測定パフォーマンス（1秒あたりの測定回数）を評価します。
 
@@ -98,7 +98,7 @@ uv run vl53l0x_pigpio performance [OPTIONS]
 uv run vl53l0x_pigpio performance --count 500
 ```
 
-### キャリブレーション (`calibrate`)
+### === キャリブレーション (`calibrate`)
 
 センサーのオフセット値をキャリブレーションし、設定ファイルに保存します。
 
@@ -123,14 +123,14 @@ uv run vl53l0x_pigpio calibrate [OPTIONS]
 uv run vl53l0x_pigpio calibrate --distance 150
 ```
 
-## 参考情報
+## ◆参考情報
 
 - [Pololu社:Arduino用 C++ ソースコード](https://github.com/pololu/vl53l0x-arduino)
 - https://github.com/cassou/VL53L0X_rasp
 - https://github.com/johnbryanmoore/VL53L0X_rasp_python
 
 
-## AIの活用
+## ◆AIの活用
 
 以下のAIと **協力しながら** 作成しました。
 とはいえ、作らせっぱなしにするのではなく、
@@ -141,6 +141,6 @@ uv run vl53l0x_pigpio calibrate --distance 150
 - [claude](https://claude.ai/)
 
 
-## ライセンス
+## ◆ライセンス
 
 このプロジェクトはMITライセンスの下で公開されています。詳細は`LICENSE`ファイルを参照してください。

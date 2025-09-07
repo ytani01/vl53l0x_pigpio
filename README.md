@@ -1,21 +1,21 @@
 # VL53L0X pigpio
 
-## ◆概要
+## ◆ 概要
 
 `pigpio`ライブラリを使用してVL53L0X距離センサーを制御するためのPythonドライバーです。
 Raspberry Pi OSでの使用を前提としています。
 
-## ◆特徴
+## ◆ 特徴
 
 - `pigpio` を利用し、すべてPythonで実装
 - ライブラリとして、またCLIツールとして利用可能
 - オフセットキャリブレーション機能
 
-## ◆インストール
+## ◆ インストール
 
 このパッケージは、Raspberry Pi OSでの使用を前提としています。
 
-### 1. 仮想環境の作成
+### === 仮想環境の作成
 
 パッケージをクリーンな環境にインストールするため、仮想環境を作成することを強く推奨します。
 
@@ -31,7 +31,7 @@ python -m venv .venv
 source .venv/bin/activate
 ```
 
-### 2. パッケージのインストール
+### === パッケージのインストール
 
 以下のコマンドで、TestPyPIからパッケージをインストールします。
 
@@ -43,7 +43,7 @@ pip install -U \
 ```
 *(注: このパッケージは現在TestPyPIで公開されています。将来、本番のPyPIに公開された際は、インストールコマンドが `pip install vl53l0x_pigpio` に変更される予定です。)*
 
-## ◆ライブラリとしての使い方
+## ◆ ライブラリとしての使い方
 
 基本的な使い方は以下の通りです。
 
@@ -73,7 +73,7 @@ finally:
     pi.stop()
 ```
 
-## ◆CLIツールの使い方
+## ◆ CLIツールの使い方
 
 仮想環境を有効にすると、`vl53l0x_pigpio`コマンドが使用できます。
 
@@ -104,14 +104,14 @@ vl53l0x_pigpio calibrate --distance 150
 
 より詳細なライブラリAPIやコマンドの仕様については、[docs/REFERENCE.md](docs/REFERENCE.md)を参照してください。
 
-## ◆参考情報
+## ◆ 参考情報
 
 - [Pololu社:Arduino用 C++ ソースコード](https://github.com/pololu/vl53l0x-arduino)
 - https://github.com/cassou/VL53L0X_rasp
 - https://github.com/johnbryanmoore/VL53L0X_rasp_python
 
 
-## ◆AIの活用
+## ◆ AIの活用
 
 以下のAIと **協力しながら** 作成しました。
 とはいえ、作らせっぱなしにするのではなく、
@@ -122,6 +122,6 @@ vl53l0x_pigpio calibrate --distance 150
 - [claude](https://claude.ai/)
 
 
-## ◆ライセンス
+## ◆ ライセンス
 
 このプロジェクトはMITライセンスの下で公開されています。詳細は`LICENSE`ファイルを参照してください。

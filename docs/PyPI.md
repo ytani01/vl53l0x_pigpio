@@ -1,44 +1,28 @@
-# PyPIへの公開方法
+# PyPIへの公開とインストールの方法
 
-このドキュメントでは、`vl53l0x_pigpio` パッケージを TestPyPI と PyPI に公開する手順を説明します。
+このドキュメントでは、`vl53l0x_pigpio` パッケージの公開手順とインストール手順を説明します。
 
-## 1. ビルド
+---
 
-まず、配布用のパッケージをビルドします。以下のコマンドを実行すると、`dist/` ディレクトリにパッケージファイルが作成されます。
+## 公開者向け: PyPIへの公開手順
+
+### 1. ビルド
+
+配布用のパッケージをビルドします。
 
 ```bash
 uv build
 ```
 
----
+### 2. 認証情報の設定（推奨）
 
-## 2. 認証情報の設定（推奨）
-
-毎回アップロードのたびにユーザー名とパスワードを入力する代わりに、ファイルに認証情報を保存しておくと、コマンド実行だけでアップロードが完了して便利です。
+毎回アップロードのたびに認証情報を入力する手間を省くため、`.pypirc` ファイルに認証情報を保存する方法を推奨します。
 
 **重要**: `pyproject.toml` のようなバージョン管理されるファイルには、APIトークンなどの機密情報を絶対に書き込まないでください。
 
-### 方法1: `hatch` の設定ファイルを利用する（推奨）
+#### `.pypirc` ファイルの作成
 
-`hatch`のコマンドを使って、認証情報を安全な場所に保存する方法です。
-
-以下のコマンドを実行して、TestPyPIとPyPIの認証情報をそれぞれ設定します。`<...>`の部分はご自身のAPIトークンに置き換えてください。
-
-**TestPyPI用:**
-```bash
-hatch config set publish.test.user __token__
-hatch config set publish.test.auth '<your-testpypi-token>'
-```
-
-**本番PyPI用:**
-```bash
-hatch config set publish.pypi.user __token__
-hatch config set publish.pypi.auth '<your-pypi-token>'
-```
-
-### 方法2: `.pypirc` ファイルを利用する（従来の方法）
-
-ホームディレクトリ (`~`) に `.pypirc` ファイルを作成し、認証情報を記述する方法です。
+ホームディレクトリ (`~`) に `.pypirc` ファイルを作成し、以下の内容を記述します。`<...>`の部分はご自身のAPIトークンに置き換えてください。
 
 **ファイル:** `~/.pypirc`
 ```ini
@@ -56,60 +40,72 @@ repository = https://test.pypi.org/legacy/
 username = __token__
 password = <your-testpypi-token>
 ```
+作成後、以下のコマンドで自分だけが読み書きできるように権限を変更しておくと、より安全です。
+```bash
+chmod 600 ~/.pypirc
+```
 
----
+### 3. PyPI/TestPyPIへの公開
 
-## 3. TestPyPIへの公開 (テスト用)
+#### 3.1. アカウントとAPIトークンの準備
 
-### 3.1. アカウントとAPIトークンの準備
-
-1.  [TestPyPI](https://test.pypi.org/) でアカウントを作成します。
-2.  ログイン後、[API tokens](https://test.pypi.org/manage/account/token/) のページでAPIトークンを生成します。
-    -   **Scope**: `Project: vl53l0x_pigpio` に限定することを推奨します。
-    -   生成されたトークン (`pypi-` から始まる文字列) は一度しか表示されないため、必ずコピーしてください。
+- **TestPyPI**: [TestPyPI](https://test.pypi.org/) でアカウントを作成し、[API token](https://test.pypi.org/manage/account/token/) を生成します。
+- **PyPI**: [PyPI](https://pypi.org/) でアカウントを作成し、[API token](https://pypi.org/manage/account/token/) を生成します。
 
 **プロジェクト初回公開時の注意:**
-
 PyPI/TestPyPIにまだプロジェクトが存在しない場合、プロジェクトにスコープを限定したAPIトークンは作成できません。その場合、初回のみ以下の手順が必要です。
 
 1.  スコープを **`Entire account (all projects)`** に設定した一時的なトークンを作成して、初回アップロードを行います。
 2.  アップロード成功後、プロジェクトに限定した正式なトークンを再作成します。
 3.  セキュリティのため、最初に使用した一時的なトークンは削除します。
 
-### 3.2. アップロード
+#### 3.2. アップロード
 
-以下のコマンドを実行して、TestPyPIにパッケージをアップロードします。
+以下のコマンドでパッケージをアップロードします。
 
+**TestPyPIへ (テスト用):**
 ```bash
 uv run hatch publish -r test
 ```
 
-「2. 認証情報の設定」を行っていない場合は、コマンド実行後にユーザー名とパスワードの入力を求められます。
-
--   **ユーザー名**: `__token__`
--   **パスワード**: 3.1で取得したAPIトークン
-
-アップロード後、`https://test.pypi.org/project/vl53l0x_pigpio/` でパッケージが公開されていることを確認できます。
-
----
-
-## 4. PyPIへの公開 (本番)
-
-### 4.1. アカウントとAPIトークンの準備
-
-1.  [PyPI](https://pypi.org/) でアカウントを作成します。(TestPyPIとは別のアカウントです)
-2.  ログイン後、[API tokens](https://pypi.org/manage/account/token/) のページでAPIトークンを生成します。
-    -   **Scope**: `Project: vl53l0x_pigpio` に限定することを推奨します。（初回公開時は上記注意参照）
-    -   生成されたトークンをコピーします。
-
-### 4.2. アップロード
-
-以下のコマンドを実行して、PyPIにパッケージをアップロードします。
-
+**PyPIへ (本番公開):**
 ```bash
 uv run hatch publish
 ```
 
-「2. 認証情報の設定」を行っていない場合は、同様に認証情報の入力が求められます。
+`.pypirc` ファイルを設定していない場合は、コマンド実行後にユーザー名 (`__token__`) とパスワード (APIトークン) の入力が求められます。
 
-アップロード後、`https://pypi.org/project/vl53l0x_pigpio/` でパッケージが公開されていることを確認できます。
+---
+
+## 利用者向け: インストール方法
+
+### PyPIからの通常インストール
+
+PyPIで公開されている安定版をインストールするには、以下のコマンドを実行します。
+
+```bash
+pip install vl53l0x_pigpio
+```
+または `uv` を使う場合:
+```bash
+uv pip install vl53l0x_pigpio
+```
+
+### TestPyPIからのテストインストール
+
+開発中のバージョンなどをテストするには、以下のコマンドでTestPyPIから直接インストールします。
+
+**`uv pip` を使う場合 (推奨):**
+```bash
+uv pip install \
+  --index-url https://test.pypi.org/simple/ \
+  vl53l0x_pigpio
+```
+
+**`pip` を使う場合:**
+```bash
+pip install \
+  --index-url https://test.pypi.org/simple/ \
+  --extra-index-url https://pypi.org/simple \
+  vl53l0x_pigpio
+```

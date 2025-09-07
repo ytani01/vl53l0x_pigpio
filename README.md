@@ -3,7 +3,7 @@
 ## ◆概要
 
 `pigpio`ライブラリを使用してVL53L0X距離センサーを制御するためのPythonドライバーです。
-Raspberry Pi Zero 2Wのような低スペックの環境でも動作するように設計されています。
+Raspberry Pi OSでの使用を前提としています。
 
 ## ◆特徴
 
@@ -13,14 +13,35 @@ Raspberry Pi Zero 2Wのような低スペックの環境でも動作するよう
 
 ## ◆インストール
 
-リポジトリをクローンして`uv`を使用してください。
+このパッケージは、Raspberry Pi OSでの使用を前提としています。
+
+### 1. 仮想環境の作成
+
+パッケージをクリーンな環境にインストールするため、仮想環境を作成することを強く推奨します。
 
 ```bash
-git clone https://github.com/your-username/vl53l0x-pigpio.git
-cd vl53l0x-pigpio
-uv venv
-uv pip install -e .
+# プロジェクト用のディレクトリを作成し、移動
+mkdir my_sensor_project
+cd my_sensor_project
+
+# 仮想環境を作成
+python -m venv .venv
+
+# 仮想環境を有効化 (Linux / macOS)
+source .venv/bin/activate
 ```
+
+### 2. パッケージのインストール
+
+以下のコマンドで、TestPyPIからパッケージをインストールします。
+
+```bash
+pip install -U \
+  --index-url https://test.pypi.org/simple/ \
+  --extra-index-url https://pypi.org/simple \
+  vl53l0x_pigpio
+```
+*(注: このパッケージは現在TestPyPIで公開されています。将来、本番のPyPIに公開された際は、インストールコマンドが `pip install vl53l0x_pigpio` に変更される予定です。)*
 
 ## ◆ライブラリとしての使い方
 
@@ -54,74 +75,34 @@ finally:
 
 ## ◆CLIツールの使い方
 
-このパッケージには、コマンドラインからセンサーを操作するための`vl53l0x_pigpio`コマンドが含まれています。
-コマンドの実行には `uv run` を使用します。
+仮想環境を有効にすると、`vl53l0x_pigpio`コマンドが使用できます。
 
 ### === ヘルプ
 
 ```bash
-uv run vl53l0x_pigpio --help
+vl53l0x_pigpio --help
 ```
 
 ### === 距離の測定 (`get`)
 
-指定した回数だけ距離を測定します。
-
 ```bash
-uv run vl53l0x_pigpio get [OPTIONS]
-```
-
-**オプション:**
-- `-c, --count INTEGER`: 測定回数 (デフォルト: 10)
-- `-i, --interval FLOAT`: 測定間隔（秒） (デフォルト: 1.0)
-
-**例:**
-```bash
-# 5回測定する
-uv run vl53l0x_pigpio get --count 5
+vl53l0x_pigpio get --count 5
 ```
 
 ### === パフォーマンス測定 (`performance`)
 
-センサーの測定パフォーマンス（1秒あたりの測定回数）を評価します。
-
 ```bash
-uv run vl53l0x_pigpio performance [OPTIONS]
-```
-
-**オプション:**
-- `--count INTEGER`: 測定回数 (デフォルト: 100)
-
-**例:**
-```bash
-# 500回測定してパフォーマンスを評価
-uv run vl53l0x_pigpio performance --count 500
+vl53l0x_pigpio performance --count 500
 ```
 
 ### === キャリブレーション (`calibrate`)
 
-センサーのオフセット値をキャリブレーションし、設定ファイルに保存します。
-
 ```bash
-uv run vl53l0x_pigpio calibrate [OPTIONS]
+vl53l0x_pigpio calibrate --distance 150
 ```
+*(各コマンドの詳細なオプションは `vl53l0x_pigpio [コマンド名] --help` で確認できます)*
 
-**手順:**
-1. センサーの前に、指定した距離（デフォルト: 100mm）に白いターゲットを置きます。
-2. 上記コマンドを実行すると、Enterキーの入力を求められます。
-3. 準備ができたらEnterキーを押すと、測定が開始されます。
-4. 計算されたオフセット値が設定ファイルに保存されます。
-
-**オプション:**
-- `-D, --distance INTEGER`: ターゲットまでの距離 [mm] (デフォルト: 100)
-- `-c, --count INTEGER`: 測定回数 (デフォルト: 10)
-- `-o, --output-file TEXT`: オフセットを保存するファイルパス (デフォルト: `~/vl53l0x.json`)
-
-**例:**
-```bash
-# 15cm (150mm) の距離でキャリブレーション
-uv run vl53l0x_pigpio calibrate --distance 150
-```
+より詳細なライブラリAPIやコマンドの仕様については、[docs/REFERENCE.md](docs/REFERENCE.md)を参照してください。
 
 ## ◆参考情報
 

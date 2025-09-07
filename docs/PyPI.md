@@ -49,7 +49,7 @@ chmod 600 ~/.pypirc
 
 #### 3.1. アカウントとAPIトークンの準備
 
-- **TestPyPI**: [TestPyPI](https://test.pypi.org/) でアカウントを作成し、[API token](https://test.pypi.org/manage/account/token/) を生成します。
+- **TestPI**: [TestPI](https://test.pypi.org/) でアカウントを作成し、[API token](https://test.pypi.org/manage/account/token/) を生成します。
 - **PyPI**: [PyPI](https://pypi.org/) でアカウントを作成し、[API token](https://pypi.org/manage/account/token/) を生成します。
 
 **プロジェクト初回公開時の注意:**
@@ -63,7 +63,7 @@ PyPI/TestPyPIにまだプロジェクトが存在しない場合、プロジェ�
 
 以下のコマンドでパッケージをアップロードします。
 
-**TestPyPIへ (テスト用):**
+**TestPIへ (テスト用):**
 ```bash
 uv run hatch publish -r test
 ```
@@ -77,9 +77,9 @@ uv run hatch publish
 
 ---
 
-## 利用者向け: インストール方法
+## 利用者向け: インストールと更新の方法
 
-### PyPIからの通常インストール
+### PyPIからの通常インストール・更新
 
 PyPIで公開されている安定版をインストールするには、以下のコマンドを実行します。
 
@@ -91,9 +91,16 @@ pip install vl53l0x_pigpio
 uv pip install vl53l0x_pigpio
 ```
 
-### TestPyPIからのテストインストール
+すでにインストール済みで、最新版に更新する場合は `-U` (`--upgrade`) フラグを追加します。
 
-開発中のバージョンなどをテストするには、以下のコマンドでTestPyPIから直接インストールします。
+```bash
+pip install -U vl53l0x_pigpio
+```
+(`uv pip install` は常に最新版をインストールしようとするため、コマンドは同じです。)
+
+### TestPIからのテストインストール・更新
+
+開発中のバージョンなどをテストするには、以下のコマンドでTestPIから直接インストールします。
 
 **`uv pip` を使う場合 (推奨):**
 ```bash
@@ -109,3 +116,13 @@ pip install \
   --extra-index-url https://pypi.org/simple \
   vl53l0x_pigpio
 ```
+
+すでにTestPIからインストール済みで、最新のテストバージョンに更新する場合も、同様に `--index-url` を指定し、`-U` フラグを追加します。
+
+```bash
+pip install -U \
+  --index-url https://test.pypi.org/simple/ \
+  --extra-index-url https://pypi.org/simple \
+  vl53l0x_pigpio
+```
+(`uv` を使う場合は、インストールと同じコマンドで更新も行えます。)

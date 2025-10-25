@@ -68,7 +68,12 @@ def get(
     try:
         with VL53L0X(pi, debug=debug, config_file_path=ctx.obj["config_file"]) as sensor:
             for i in range(count):
-                distance: int = sensor.get_range()
+                try:
+                    distance: int = sensor.get_range()
+                except Exception as e:
+                    __log.warning("%s: %s", type(e).__name__, e)
+                    continue
+
                 if distance > 0:
                     click.echo(f"{i + 1}/{count}: {distance} mm")
                 else:

@@ -2,12 +2,12 @@
 # (c) 2025 Yoichi Tanibayashi
 #
 import time
+from pathlib import Path
 
 import click
 import pigpio
-from pathlib import Path
 
-from . import __version__, click_common_opts, get_logger, VL53L0X
+from . import VL53L0X, __version__, click_common_opts, get_logger
 from .config_manager import get_default_config_filepath, save_config
 
 
@@ -15,14 +15,17 @@ from .config_manager import get_default_config_filepath, save_config
     invoke_without_command=True,
     help="""
 VL53L0X driver CLI
-"""
+""",
 )
 @click.option(
-    "--config-file", "-C", type=str,
-    default=str(get_default_config_filepath()), show_default=True,
-    help="Path to the configuration file"
+    "--config-file",
+    "-C",
+    type=str,
+    default=str(get_default_config_filepath()),
+    show_default=True,
+    help="Path to the configuration file",
 )
-@click_common_opts(ver_str=__version__)
+@click_common_opts(__version__)
 def cli(ctx: click.Context, debug: bool, config_file: str) -> None:
     """VL53L0X距離センサーのPythonドライバー用CLIツール。"""
     cmd_name = ctx.info_name
@@ -31,7 +34,7 @@ def cli(ctx: click.Context, debug: bool, config_file: str) -> None:
     __log = get_logger(str(cmd_name), debug)
 
     __log.debug("cmd_name=%a, subcmd_name=%a", cmd_name, subcmd_name)
-    
+
     # Pass config_file to the context object for subcommands
     ctx.obj = {"config_file": Path(config_file)}
 
@@ -47,26 +50,30 @@ get distance"""
     "--count", "-c", type=int, default=10, show_default=True, help="count"
 )
 @click.option(
-    "--interval", "-i", type=float, default=1.0, show_default=True,
-    help="interval seconds"
+    "--interval",
+    "-i",
+    type=float,
+    default=1.0,
+    show_default=True,
+    help="interval seconds",
 )
-@click_common_opts(ver_str=__version__)
-def get(
-    ctx: click.Context, count: int, interval: float, debug: bool
-) -> None:
+@click_common_opts(__version__)
+def get(ctx: click.Context, count: int, interval: float, debug: bool) -> None:
     """基本的な例を実行します。"""
     __log = get_logger(__name__, debug)
     __log.debug("count=%s, interval=%s", count, interval)
 
     cmd_name = ctx.command.name
     __log.debug("cmd_name=%a", cmd_name)
-    
+
     pi = pigpio.pi()
     if not pi.connected:
         raise click.ClickException("cannnto connect pigpiod")
 
     try:
-        with VL53L0X(pi, debug=debug, config_file_path=ctx.obj["config_file"]) as sensor:
+        with VL53L0X(
+            pi, debug=debug, config_file_path=ctx.obj["config_file"]
+        ) as sensor:
             for i in range(count):
                 try:
                     distance: int = sensor.get_range()
@@ -87,7 +94,7 @@ def get(
 @click.option(
     "--count", "-c", type=int, default=100, show_default=True, help="count"
 )
-@click_common_opts(ver_str=__version__)
+@click_common_opts(__version__)
 def performance(ctx: click.Context, count: int, debug: bool) -> None:
     """VL53L0Xセンサーの測定パフォーマンスを評価します。"""
     __log = get_logger(__name__, debug)
@@ -95,13 +102,15 @@ def performance(ctx: click.Context, count: int, debug: bool) -> None:
 
     cmd_name = ctx.command.name
     __log.debug("cmd_name=%a", cmd_name)
-    
+
     pi = pigpio.pi()
     if not pi.connected:
         raise click.ClickException("cannnto connect pigpiod")
 
     try:
-        with VL53L0X(pi, debug=debug, config_file_path=ctx.obj["config_file"]) as sensor:
+        with VL53L0X(
+            pi, debug=debug, config_file_path=ctx.obj["config_file"]
+        ) as sensor:
             click.echo(f"{count}回の距離測定パフォーマンスを評価します...")
             start_time = time.perf_counter()
             for _ in range(count):
@@ -114,32 +123,50 @@ def performance(ctx: click.Context, count: int, debug: bool) -> None:
 
             click.echo("---")
             click.echo(f"合計時間: {total_time:.4f} 秒")
-            click.echo(f"1回あたりの平均時間: {avg_time_per_measurement * 1000:.4f} ms")
-            click.echo(f"1秒あたりの測定回数: {measurements_per_second:.2f} 回/秒")
+            click.echo(
+                f"1回あたりの平均時間: {avg_time_per_measurement * 1000:.4f} ms"
+            )
+            click.echo(
+                f"1秒あたりの測定回数: {measurements_per_second:.2f} 回/秒"
+            )
             click.echo("---")
     finally:
         pi.stop()
 
 
-@cli.command(help="""calibrate offset and save""" )
+@cli.command(help="""calibrate offset and save""")
 @click.option(
-    "--distance", "-D", type=int, default=100, show_default=True,
-    help="distance to target [mm]"
+    "--distance",
+    "-D",
+    type=int,
+    default=100,
+    show_default=True,
+    help="distance to target [mm]",
 )
 @click.option(
-    "--count", "-c", type=int, default=10, show_default=True,
-    help="count"
+    "--count", "-c", type=int, default=10, show_default=True, help="count"
 )
 @click.option(
-    "--output-file", "-o", type=str,
-    default=str(get_default_config_filepath()), show_default=True,
-    help="Path to save the calculated offset"
+    "--output-file",
+    "-o",
+    type=str,
+    default=str(get_default_config_filepath()),
+    show_default=True,
+    help="Path to save the calculated offset",
 )
-@click_common_opts(ver_str=__version__)
-def calibrate(ctx: click.Context, distance: int, count: int, output_file: str, debug: bool) -> None:
+@click_common_opts(__version__)
+def calib(
+    ctx: click.Context,
+    distance: int,
+    count: int,
+    output_file: str,
+    debug: bool,
+) -> None:
     """オフセットをキャリブレーションします。"""
     __log = get_logger(__name__, debug)
-    __log.debug("distance=%s, count=%s, output_file=%s", distance, count, output_file)
+    __log.debug(
+        "distance=%s, count=%s, output_file=%s", distance, count, output_file
+    )
 
     output_file_path = Path(output_file)
 
@@ -149,7 +176,7 @@ def calibrate(ctx: click.Context, distance: int, count: int, output_file: str, d
 
     try:
         with VL53L0X(
-                pi, debug=debug, config_file_path=ctx.obj["config_file"]
+            pi, debug=debug, config_file_path=ctx.obj["config_file"]
         ) as sensor:
             click.echo(f"{distance}mmの距離にターゲットを置いてください。")
             click.echo("準備ができたらEnterキーを押してください...")

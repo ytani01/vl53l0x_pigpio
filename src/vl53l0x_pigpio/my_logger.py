@@ -11,10 +11,9 @@ Usage:
   log = get_logger(__name__, debug=True)
   log.debug("This is a debug message.")
 """
+
 import inspect
-from logging import (
-    DEBUG, INFO, Formatter, Logger, StreamHandler, getLogger
-)
+from logging import DEBUG, INFO, Formatter, Logger, StreamHandler, getLogger
 
 
 def get_logger(name: str, debug: bool = False) -> Logger:
@@ -53,7 +52,9 @@ def get_logger(name: str, debug: bool = False) -> Logger:
     )
     console_handler = StreamHandler()
     console_handler.setFormatter(formatter)
-    console_handler.setLevel(DEBUG)  # Handler level should be low to pass all messages
+    console_handler.setLevel(
+        DEBUG
+    )  # Handler level should be low to pass all messages
 
     logger.addHandler(console_handler)
 

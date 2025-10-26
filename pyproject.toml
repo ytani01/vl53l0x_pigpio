@@ -34,19 +34,13 @@ source = "vcs"
 [project.scripts]
 vl53l0x_pigpio = "vl53l0x_pigpio.__main__:cli"
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = [
-    "flake8>=7.3.0",
     "mypy>=1.17.1",
-    "pylint>=3.3.8",
     "pyright>=1.1.404",
     "pytest>=8.4.1",
     "ruff>=0.5.5",
-    "hatch>=1.10.0",
 ]
-
-[tool.mypy]
-strict = true
 
 [[tool.mypy.overrides]]
 module = ['pigpio']

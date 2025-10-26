@@ -4,13 +4,13 @@
 """Python driver for the VL53L0X distance sensor."""
 
 import time
-import pigpio
-import numpy as np
 from pathlib import Path
 
-from .my_logger import get_logger
-from .config_manager import load_config
+import numpy as np
+import pigpio
 
+from .config_manager import load_config
+from .my_logger import get_logger
 
 # レジスタアドレス
 SYSRANGE_START = 0x00
@@ -189,7 +189,14 @@ class VL53L0X:
     VL53L0X driver.
     """
 
-    def __init__(self, pi: pigpio.pi, i2c_bus: int = 1, i2c_address: int = 0x29, debug: bool = False, config_file_path: Path | None = None):
+    def __init__(
+        self,
+        pi: pigpio.pi,
+        i2c_bus: int = 1,
+        i2c_address: int = 0x29,
+        debug: bool = False,
+        config_file_path: Path | None = None,
+    ):
         """
         Initialize the VL53L0X sensor.
         """
@@ -211,7 +218,11 @@ class VL53L0X:
             config = load_config(config_file_path)
             if "offset_mm" in config:
                 self.set_offset(config["offset_mm"])
-                self.__log.debug("Loaded offset_mm=%s from %s", self.offset_mm, config_file_path)
+                self.__log.debug(
+                    "Loaded offset_mm=%s from %s",
+                    self.offset_mm,
+                    config_file_path,
+                )
 
         self.initialize()
 
@@ -222,15 +233,17 @@ class VL53L0X:
         return self
 
     def __exit__(
-        self, exc_type: type | None, exc_val: Exception | None, exc_tb: type | None
+        self,
+        exc_type: type | None,
+        exc_val: Exception | None,
+        exc_tb: type | None,
     ) -> None:
         """
         コンテキストマネージャーとして使用する際の終了ポイント。
         I2C接続を閉じます。
         """
         self.__log.debug(
-            "exc_type=%s, exc_val=%s, exc_tb=%s",
-            exc_type, exc_val, exc_tb
+            "exc_type=%s, exc_val=%s, exc_tb=%s", exc_type, exc_val, exc_tb
         )
         self.close()
 
@@ -256,7 +269,10 @@ class VL53L0X:
 
         # I/O 2.8V エクスパンダ（推奨：一度だけ）
         try:
-            self.write_byte(VHV_CFG_PAD_SCL_SDA_EXTSUP_HV, (self.read_byte(VHV_CFG_PAD_SCL_SDA_EXTSUP_HV) | 0x01))
+            self.write_byte(
+                VHV_CFG_PAD_SCL_SDA_EXTSUP_HV,
+                (self.read_byte(VHV_CFG_PAD_SCL_SDA_EXTSUP_HV) | 0x01),
+            )
         except Exception:
             pass
 
@@ -297,7 +313,9 @@ class VL53L0X:
         self.write_byte(REG_FF, VALUE_00)
         self.write_byte(GLOBAL_CFG_REF_EN_START_SELECT, VALUE_B4)
 
-        first_spad_to_enable = SPAD_START_INDEX_APERTURE if spad_is_aperture else 0
+        first_spad_to_enable = (
+            SPAD_START_INDEX_APERTURE if spad_is_aperture else 0
+        )
         spads_enabled = 0
 
         # Enable SPADs based on count and aperture information
@@ -305,8 +323,13 @@ class VL53L0X:
             if i < first_spad_to_enable or spads_enabled == spad_count:
                 # This bit is lower than the first one to enable, or
                 # (spad_count) bits have already been enabled, so zero this bit
-                ref_spad_map[i // SPAD_MAP_BITS_PER_BYTE] &= ~(1 << (i % SPAD_MAP_BITS_PER_BYTE))
-            elif (ref_spad_map[i // SPAD_MAP_BITS_PER_BYTE] >> (i % SPAD_MAP_BITS_PER_BYTE)) & 0x1:
+                ref_spad_map[i // SPAD_MAP_BITS_PER_BYTE] &= ~(
+                    1 << (i % SPAD_MAP_BITS_PER_BYTE)
+                )
+            elif (
+                ref_spad_map[i // SPAD_MAP_BITS_PER_BYTE]
+                >> (i % SPAD_MAP_BITS_PER_BYTE)
+            ) & 0x1:
                 spads_enabled += 1
 
         self.write_block(GLOBAL_CFG_SPAD_ENABLES_REF_0, ref_spad_map)
@@ -415,7 +438,9 @@ class VL53L0X:
 
         # GPIO_HV_MUX_ACTIVE_HIGHレジスタをアクティブローに設定
         current_gpio_hv_mux = self.read_byte(GPIO_HV_MUX_ACTIVE_HIGH)
-        self.write_byte(GPIO_HV_MUX_ACTIVE_HIGH, (current_gpio_hv_mux & ~VALUE_10))
+        self.write_byte(
+            GPIO_HV_MUX_ACTIVE_HIGH, (current_gpio_hv_mux & ~VALUE_10)
+        )
 
         # 割り込みをクリア
         self.write_byte(SYSTEM_INTERRUPT_CLEAR, VALUE_01)
@@ -425,10 +450,12 @@ class VL53L0X:
         タイミングバジェットを設定し、キャリブレーションを実行します。
         """
         # 測定タイミングバジェットを取得して設定
-        self.measurement_timing_budget_us = self.get_measurement_timing_budget()
+        self.measurement_timing_budget_us = (
+            self.get_measurement_timing_budget()
+        )
         self.__log.debug(
             "measurement_timing_budget_us=%s",
-            self.measurement_timing_budget_us
+            self.measurement_timing_budget_us,
         )
         self.set_measurement_timing_budget(self.measurement_timing_budget_us)
 
@@ -493,7 +520,7 @@ class VL53L0X:
         # SPADカウントとアパーチャ情報を読み取る
         tmp = self.read_byte(REG_92)
         count = tmp & SPAD_COUNT_MASK
-        is_aperture = ((tmp & SPAD_APERTURE_BIT) != 0)
+        is_aperture = (tmp & SPAD_APERTURE_BIT) != 0
 
         # レジスタをデフォルト値に復元
         self.write_byte(REG_81, VALUE_00)
@@ -512,14 +539,16 @@ class VL53L0X:
         return ((2304 * vcsel_period_pclks * 1655) + 500) // 1000  # [ns]
 
     def _timeout_microseconds_to_mclks(
-            self, timeout_us: int, vcsel_period_pclks: int
+        self, timeout_us: int, vcsel_period_pclks: int
     ) -> int:
         # C++版 VL53L0X_calc_timeout_mclks 相当
         macro_period_ns = self._calc_macro_period(vcsel_period_pclks)
         # round up
         return (timeout_us * 1000 + (macro_period_ns // 2)) // macro_period_ns
 
-    def _timeout_mclks_to_microseconds(self, timeout_mclks: int, vcsel_period_pclks: int) -> int:
+    def _timeout_mclks_to_microseconds(
+        self, timeout_mclks: int, vcsel_period_pclks: int
+    ) -> int:
         macro_period_ns = self._calc_macro_period(vcsel_period_pclks)
         return ((timeout_mclks * macro_period_ns) + 500) // 1000
 
@@ -527,7 +556,7 @@ class VL53L0X:
         # C++: VL53L0X_decode_timeout()
         ls_byte = reg_val & 0xFF
         ms_byte = (reg_val >> 8) & 0xFF
-        return ((ls_byte << ms_byte) + 1)
+        return (ls_byte << ms_byte) + 1
 
     def _encode_timeout(self, timeout_mclks: int) -> int:
         # C++: VL53L0X_encode_timeout()
@@ -554,7 +583,9 @@ class VL53L0X:
 
         # pre-range
         if (enables >> 6) & 0x01:
-            pre_range_vcsel_period_pclks = self.read_byte(PRE_RANGE_CONFIG_VCSEL_PERIOD)
+            pre_range_vcsel_period_pclks = self.read_byte(
+                PRE_RANGE_CONFIG_VCSEL_PERIOD
+            )
             pre_range_mclks = self._decode_timeout(
                 self.read_word(PRE_RANGE_CONFIG_TIMEOUT_MACROP_HI)
             )
@@ -565,7 +596,9 @@ class VL53L0X:
 
         # final-range
         if (enables >> 7) & 0x01:
-            final_range_vcsel_period_pclks = self.read_byte(FINAL_RANGE_CONFIG_VCSEL_PERIOD)
+            final_range_vcsel_period_pclks = self.read_byte(
+                FINAL_RANGE_CONFIG_VCSEL_PERIOD
+            )
             final_range_mclks = self._decode_timeout(
                 self.read_word(FINAL_RANGE_CONFIG_TIMEOUT_MACROP_HI)
             )
@@ -591,7 +624,9 @@ class VL53L0X:
         pre_range_us = 0
         pre_range_mclks = 0
         if (enables >> 6) & 0x01:
-            pre_range_vcsel_period_pclks = self.read_byte(PRE_RANGE_CONFIG_VCSEL_PERIOD)
+            pre_range_vcsel_period_pclks = self.read_byte(
+                PRE_RANGE_CONFIG_VCSEL_PERIOD
+            )
             pre_range_mclks = self._decode_timeout(
                 self.read_word(PRE_RANGE_CONFIG_TIMEOUT_MACROP_HI)
             )
@@ -605,7 +640,9 @@ class VL53L0X:
             if final_range_us <= 0:
                 raise ValueError("Requested timing budget too small")
 
-            final_range_vcsel_period_pclks = self.read_byte(FINAL_RANGE_CONFIG_VCSEL_PERIOD)
+            final_range_vcsel_period_pclks = self.read_byte(
+                FINAL_RANGE_CONFIG_VCSEL_PERIOD
+            )
             # ★ ここを μs→mclks に修正
             final_range_mclks = self._timeout_microseconds_to_mclks(
                 final_range_us, final_range_vcsel_period_pclks
@@ -625,7 +662,9 @@ class VL53L0X:
         self.write_byte(SYSRANGE_START, VALUE_01 | vhv_init_byte)
         start = time.time()
         # 2秒上限で待つ（環境により1秒だと落ちる場合がある）
-        while (self.read_byte(RESULT_INTERRUPT_STATUS) & INTERRUPT_STATUS_MASK) == VALUE_00:
+        while (
+            self.read_byte(RESULT_INTERRUPT_STATUS) & INTERRUPT_STATUS_MASK
+        ) == VALUE_00:
             if time.time() - start > 2.0:
                 raise Exception("Timeout during ref calibration")
         self.write_byte(SYSTEM_INTERRUPT_CLEAR, VALUE_01)
@@ -648,17 +687,23 @@ class VL53L0X:
         self.write_byte(SYSRANGE_START, VALUE_01)
 
         # 予算に応じた実時間で待つ（最低1.0s）
-        budget_s = getattr(self, "measurement_timing_budget_us", 33000) / 1_000_000.0
+        budget_s = (
+            getattr(self, "measurement_timing_budget_us", 33000) / 1_000_000.0
+        )
         timeout_s = max(1.0, budget_s + 0.1)
 
         # 割り込みステータス待ち（データ準備完了）
         start = time.time()
-        while (self.read_byte(RESULT_INTERRUPT_STATUS) & INTERRUPT_STATUS_MASK) == VALUE_00:
+        while (
+            self.read_byte(RESULT_INTERRUPT_STATUS) & INTERRUPT_STATUS_MASK
+        ) == VALUE_00:
             if time.time() - start > timeout_s:
                 raise Exception("Timeout waiting for measurement ready")
 
         # 結果読み出し
-        range_mm = self.read_word(RESULT_RANGE_STATUS + VALUE_0A)  # 0x14 + 0x0A
+        range_mm = self.read_word(
+            RESULT_RANGE_STATUS + VALUE_0A
+        )  # 0x14 + 0x0A
 
         # 割り込みクリア
         self.write_byte(SYSTEM_INTERRUPT_CLEAR, VALUE_01)
@@ -696,7 +741,8 @@ class VL53L0X:
         """
         self.__log.debug(
             "Calibrating with target_distance_mm=%s, num_samples=%s",
-            target_distance_mm, num_samples
+            target_distance_mm,
+            num_samples,
         )
 
         # オフセットを一時的に0にして測定
@@ -710,7 +756,9 @@ class VL53L0X:
         self.set_offset(current_offset)
 
         offset = measured_distance - target_distance_mm
-        self.__log.debug("measured_distance=%s, offset=%s", measured_distance, offset)
+        self.__log.debug(
+            "measured_distance=%s, offset=%s", measured_distance, offset
+        )
 
         return offset
 

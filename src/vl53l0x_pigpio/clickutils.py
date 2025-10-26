@@ -3,13 +3,22 @@
 #
 import click
 
+
 def click_common_opts(
-    use_h: bool = True, use_d: bool = True, use_v: bool = True,
-    ver_str: str = "?.?.?"
+    ver_str: str = "",
+    use_h: bool = True,
+    use_d: bool = True,
+    use_v: bool = False,
 ):
     """共通オプションをまとめたメタデコレータ"""
+
     def _decorator(func):
         decorators = []
+
+        if len(ver_str) > 0:
+            v_str = ver_str
+        else:
+            v_str = "_._._"
 
         # version option
         ver_opts = ["--version", "-V"]
@@ -17,7 +26,7 @@ def click_common_opts(
             ver_opts.append("-v")
         decorators.append(
             click.version_option(
-                ver_str, *ver_opts, message="%(prog)s %(version)s"
+                v_str, *ver_opts, message="%(prog)s %(version)s"
             )
         )
 

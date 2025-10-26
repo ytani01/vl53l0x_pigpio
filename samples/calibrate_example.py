@@ -2,24 +2,42 @@
 # (c) 2025 Yoichi Tanibayashi
 #
 """キャリブレーション機能のサンプルコード"""
+
+from pathlib import Path
+
 import click
 import pigpio
-from pathlib import Path
+
 from vl53l0x_pigpio import VL53L0X
-from vl53l0x_pigpio.config_manager import get_default_config_filepath, load_config, save_config
+from vl53l0x_pigpio.config_manager import (
+    get_default_config_filepath,
+    load_config,
+    save_config,
+)
+
 
 @click.command()
-@click.option("--distance", "-d", type=int, default=100, show_default=True, help="distance to target [mm]")
-@click.option("--count", "-c", type=int, default=10, show_default=True, help="count")
 @click.option(
-    "--config-file", "-C", type=click.Path(path_type=Path),
-    default=get_default_config_filepath(), show_default=True,
-    help="Path to the configuration file"
+    "--distance",
+    "-d",
+    type=int,
+    default=100,
+    show_default=True,
+    help="distance to target [mm]",
+)
+@click.option(
+    "--count", "-c", type=int, default=10, show_default=True, help="count"
+)
+@click.option(
+    "--config-file",
+    "-C",
+    type=click.Path(path_type=Path),
+    default=get_default_config_filepath(),
+    show_default=True,
+    help="Path to the configuration file",
 )
 @click.option("--debug", is_flag=True, default=False, help="debug flag")
 def main(distance: int, count: int, config_file: Path, debug: bool) -> None:
-    
-
     pi = pigpio.pi()
     if not pi.connected:
         raise click.ClickException("cannot connect to pigpiod")
@@ -31,7 +49,9 @@ def main(distance: int, count: int, config_file: Path, debug: bool) -> None:
             config = load_config(config_file)
             if "offset_mm" in config:
                 initial_offset = config["offset_mm"]
-                click.echo(f"既存のオフセット値 {initial_offset} mm を {config_file} から読み込みました。")
+                click.echo(
+                    f"既存のオフセット値 {initial_offset} mm を {config_file} から読み込みました。"
+                )
 
         with VL53L0X(pi, debug=debug, config_file_path=config_file) as sensor:
             # Set initial offset if loaded from config
@@ -59,6 +79,7 @@ def main(distance: int, count: int, config_file: Path, debug: bool) -> None:
 
     finally:
         pi.stop()
+
 
 if __name__ == "__main__":
     main()

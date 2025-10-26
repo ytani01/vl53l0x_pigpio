@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 
-import click
 import time
+
+import click
 import pigpio
+
 from vl53l0x_pigpio.driver import VL53L0X
 from vl53l0x_pigpio.my_logger import get_logger
 
@@ -12,13 +14,15 @@ from vl53l0x_pigpio.my_logger import get_logger
     "--count", "-c", type=int, default=10, show_default=True, help="count"
 )
 @click.option(
-    "--interval", "-i", type=float, default=1.0, show_default=True,
-    help="interval seconds"
+    "--interval",
+    "-i",
+    type=float,
+    default=1.0,
+    show_default=True,
+    help="interval seconds",
 )
 @click.option("--debug", "-d", is_flag=True, default=False, help="debug flag")
-def main(
-    count: int, interval: float, debug: bool
-) -> None:
+def main(count: int, interval: float, debug: bool) -> None:
     log = get_logger(__name__, debug)
     log.debug("count=%s, interval=%s", count, interval)
 

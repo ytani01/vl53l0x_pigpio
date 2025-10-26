@@ -4,6 +4,7 @@ from typing import Any, cast
 
 CONFIG_FILE_NAME = "vl53l0x.json"
 
+
 def get_default_config_filepath() -> Path:
     """
     デフォルトの設定ファイルのパスを返します。
@@ -11,6 +12,7 @@ def get_default_config_filepath() -> Path:
     """
     home_dir = Path.home()
     return home_dir / CONFIG_FILE_NAME
+
 
 def load_config(filepath: Path) -> dict[str, Any]:
     """
@@ -20,6 +22,7 @@ def load_config(filepath: Path) -> dict[str, Any]:
         return {}
     with open(filepath, "r", encoding="utf-8") as f:
         return cast(dict[str, Any], json.load(f))
+
 
 def save_config(filepath: Path, config: dict[str, Any]) -> None:
     """

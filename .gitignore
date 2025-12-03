@@ -7,6 +7,9 @@ screenshot_*
 *.log
 .*_cache/
 
+# uv
+uv.lock
+
 # emacs
 *~
 .*~
